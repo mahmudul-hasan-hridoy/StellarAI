@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   env:{
-    AZURE_API_KEY:"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",
+    AZURE_API_KEY:"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",
 AZURE_ENDPOINT:"https://models.inference.ai.azure.com",
     
   }
