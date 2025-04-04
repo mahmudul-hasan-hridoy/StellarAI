@@ -54,13 +54,19 @@ export async function POST(req: NextRequest) {
         {
           role: "system",
           content:
-            systemPrompt ||
-            "You are an AI assistant specialized in code generation and problem-solving. Provide clear, concise, and efficient solutions.",
+            (systemPrompt ? 
+              systemPrompt + (message.deepThink ? "\nPlease think deeply and thoroughly about your response." : "") :
+              `You are an AI assistant specialized in code generation and problem-solving. ${
+                message.deepThink ? "Take your time to think deeply and provide thorough, well-reasoned solutions." : 
+                "Provide clear, concise, and efficient solutions."
+              }`),
         },
         { role: "user", content: message },
       ],
       stream: true,
-      model: "Deepseek-v3", // You can make this configurable
+      model: message.attachments?.length > 0 ? "gpt-4" : 
+             systemPrompt?.includes("deep_think") ? "deepseek-r1" : 
+             "deepseek-v3",
     });
 
     // Call Azure OpenAI API with streaming enabled
