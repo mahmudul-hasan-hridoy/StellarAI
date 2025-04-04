@@ -129,18 +129,50 @@ export async function POST(req: NextRequest) {
                   controller.enqueue(`data: ${JSON.stringify({ content })}\n\n`);
                 }
               } catch (jsonError) {
-                // If JSON parsing fails, try to sanitize the data
+                // If JSON parsing fails, try multiple recovery strategies
                 console.warn("JSON parse error, attempting to sanitize:", jsonError.message);
                 
-                // Try to recover from common JSON errors
                 if (jsonData && typeof jsonData === 'string') {
-                  // Check if it's a truncated JSON
+                  // Strategy 1: Extract content using regex if format is recognizable
                   if (jsonData.includes('"content":')) {
-                    const contentMatch = jsonData.match(/"content":\s*"([^"]*)"/);
+                    // Look for content pattern even if quotes are unterminated
+                    const contentMatch = jsonData.match(/"content":\s*"([^]*?)(?:"|$)/);
                     if (contentMatch && contentMatch[1]) {
                       const content = contentMatch[1];
                       fullContent += content;
                       controller.enqueue(`data: ${JSON.stringify({ content })}\n\n`);
+                      console.log("Recovered content using pattern matching");
+                      continue; // Skip to next line after recovery
+                    }
+                  }
+                  
+                  // Strategy 2: For unterminated strings, try to fix JSON
+                  try {
+                    // Add missing quote for unterminated string if that's the issue
+                    if (jsonError.message.includes("Unterminated string")) {
+                      const fixedJson = jsonData + '"}}';
+                      const parsed = JSON.parse(fixedJson);
+                      const content = parsed.choices?.[0]?.delta?.content;
+                      
+                      if (content) {
+                        fullContent += content;
+                        controller.enqueue(`data: ${JSON.stringify({ content })}\n\n`);
+                        console.log("Recovered content by fixing unterminated string");
+                        continue;
+                      }
+                    }
+                  } catch (secondaryError) {
+                    // If fixing also fails, continue to next strategy
+                  }
+                  
+                  // Strategy 3: Just extract anything between "content": " and the next "
+                  const roughContentMatch = jsonData.match(/"content":\s*"([^"]*)/);
+                  if (roughContentMatch && roughContentMatch[1]) {
+                    const content = roughContentMatch[1];
+                    if (content.trim()) {
+                      fullContent += content;
+                      controller.enqueue(`data: ${JSON.stringify({ content })}\n\n`);
+                      console.log("Recovered partial content as fallback");
                     }
                   }
                 }
@@ -166,12 +198,44 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Return the streaming response
-    return new Response(azureResponse.body?.pipeThrough(transformStream), {
+    // Track streaming status for debugging
+    let streamSuccess = true;
+    const originalBody = azureResponse.body;
+    
+    // Add error handling for the stream itself
+    if (!originalBody) {
+      throw new Error("Empty response body from Azure API");
+    }
+    
+    // Create a custom reader to catch stream errors
+    const reader = originalBody.getReader();
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            controller.enqueue(value);
+          }
+          controller.close();
+        } catch (err) {
+          console.error("Stream reading error:", err);
+          streamSuccess = false;
+          controller.error(err);
+        }
+      },
+      cancel() {
+        reader.cancel();
+      }
+    });
+    
+    // Return the streaming response with the pipeline
+    return new Response(stream.pipeThrough(transformStream), {
       headers: {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
         Connection: "keep-alive",
+        "X-Debug-Enabled": "true" // Add debug header
       },
     });
   } catch (error) {
