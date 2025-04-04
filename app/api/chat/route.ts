@@ -117,14 +117,33 @@ export async function POST(req: NextRequest) {
                 jsonData = data.slice(6);
               }
 
-              // Parse and validate the JSON data
-              const parsed = JSON.parse(jsonData);
-              const content = parsed.choices?.[0]?.delta?.content;
-              
-              if (content) {
-                fullContent += content;
-                // Send the chunk with proper SSE format
-                controller.enqueue(`data: ${JSON.stringify({ content })}\n\n`);
+              // Fix for incomplete or malformed JSON
+              try {
+                // Try to parse the JSON data
+                const parsed = JSON.parse(jsonData);
+                const content = parsed.choices?.[0]?.delta?.content;
+                
+                if (content) {
+                  fullContent += content;
+                  // Send the chunk with proper SSE format
+                  controller.enqueue(`data: ${JSON.stringify({ content })}\n\n`);
+                }
+              } catch (jsonError) {
+                // If JSON parsing fails, try to sanitize the data
+                console.warn("JSON parse error, attempting to sanitize:", jsonError.message);
+                
+                // Try to recover from common JSON errors
+                if (jsonData && typeof jsonData === 'string') {
+                  // Check if it's a truncated JSON
+                  if (jsonData.includes('"content":')) {
+                    const contentMatch = jsonData.match(/"content":\s*"([^"]*)"/);
+                    if (contentMatch && contentMatch[1]) {
+                      const content = contentMatch[1];
+                      fullContent += content;
+                      controller.enqueue(`data: ${JSON.stringify({ content })}\n\n`);
+                    }
+                  }
+                }
               }
             } catch (e) {
               // Log error but don't throw to keep the stream alive
@@ -157,6 +176,20 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("Error processing request:", error);
+    
+    // Save error message to chat for better debugging
+    try {
+      if (chatId) {
+        await addMessage(chatId, {
+          role: "assistant",
+          content: "Sorry, there was an error processing your request. Please try again.",
+          attachments: []
+        });
+      }
+    } catch (saveError) {
+      console.error("Error saving error message to chat:", saveError);
+    }
+    
     return new Response(
       JSON.stringify({
         error: "Failed to process request",
