@@ -106,15 +106,23 @@ export async function POST(req: NextRequest) {
             }
 
             try {
-              const parsed = JSON.parse(data);
+              // Ensure the data is properly formatted before parsing
+              const cleanData = data.trim();
+              if (!cleanData) continue;
+              
+              const parsed = JSON.parse(cleanData);
               const content = parsed.choices?.[0]?.delta?.content || "";
 
               if (content) {
                 fullContent += content;
-                controller.enqueue(`data: ${JSON.stringify({ content })}\n\n`);
+                // Ensure proper JSON string formatting
+                const chunk = JSON.stringify({ content }) + "\n\n";
+                controller.enqueue(`data: ${chunk}`);
               }
             } catch (e) {
-              console.error("Error parsing chunk:", e);
+              console.error("Error parsing chunk:", e, "Data:", data);
+              // Skip malformed chunks instead of breaking the stream
+              continue;
             }
           }
         }
