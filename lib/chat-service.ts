@@ -37,22 +37,21 @@ export const createChat = async (
   attachments: string[] = []
 ): Promise<string> => {
   try {
+    // Create chat document
     const chatRef = await addDoc(collection(db, "chats"), {
       userId,
-      title:
-        initialMessage.substring(0, 30) +
-        (initialMessage.length > 30 ? "..." : ""),
+      title: initialMessage.substring(0, 30) + (initialMessage.length > 30 ? "..." : ""),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       isStarred: false,
     });
 
-    await addDoc(collection(db, "messages"), {
-      chatId: chatRef.id,
+    // Create first message in subcollection
+    await addDoc(collection(db, "chats", chatRef.id, "messages"), {
       role: "user",
-      content: initialMessage,
+      content: initialMessage || "",
       timestamp: serverTimestamp(),
-      attachments: attachments.length > 0 ? attachments : undefined
+      ...(attachments.length > 0 && { attachments })
     });
 
     return chatRef.id;
