@@ -106,22 +106,29 @@ export async function POST(req: NextRequest) {
             }
 
             try {
-              // Ensure the data is properly formatted before parsing
-              const cleanData = data.trim();
-              if (!cleanData) continue;
-              
-              const parsed = JSON.parse(cleanData);
-              const content = parsed.choices?.[0]?.delta?.content || "";
+              // Handle [DONE] marker
+              if (data.trim() === "[DONE]") {
+                continue;
+              }
 
+              let jsonData = data;
+              // Sometimes the JSON can be prefixed with "data: "
+              if (data.startsWith('data: ')) {
+                jsonData = data.slice(6);
+              }
+
+              // Parse and validate the JSON data
+              const parsed = JSON.parse(jsonData);
+              const content = parsed.choices?.[0]?.delta?.content;
+              
               if (content) {
                 fullContent += content;
-                // Ensure proper JSON string formatting
-                const chunk = JSON.stringify({ content }) + "\n\n";
-                controller.enqueue(`data: ${chunk}`);
+                // Send the chunk with proper SSE format
+                controller.enqueue(`data: ${JSON.stringify({ content })}\n\n`);
               }
             } catch (e) {
-              console.error("Error parsing chunk:", e, "Data:", data);
-              // Skip malformed chunks instead of breaking the stream
+              // Log error but don't throw to keep the stream alive
+              console.error("Stream parsing error:", e.message);
               continue;
             }
           }
