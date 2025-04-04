@@ -1,0 +1,181 @@
+"use client";
+
+import { FC, memo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from "@/components/ui/tooltip";
+import { Check, Copy, ExternalLink } from "lucide-react";
+import { 
+  SiJavascript, 
+  SiReact,
+  SiHtml5,
+  SiCss3,
+  SiPython,
+  SiJava,
+  SiPhp,
+  SiSwift,
+  SiRust,
+  SiGo,
+  SiDocker,
+  SiTypescript,
+  SiKotlin,
+  SiCsharp,
+  SiCplusplus,
+  SiRuby,
+  SiScala 
+} from "react-icons/si";
+import { FiCode } from "react-icons/fi";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneLight } from "react-syntax-highlighter/dist/cjs/styles/prism";
+import { Modal } from "@/components/Modal";
+import { Mermaid } from "@/components/Mermaid";
+
+// Custom SVG component for Shell (since not available in Lucide/React Icons)
+const Shell: FC<{ className?: string }> = ({ className }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 576 512"
+    className={className}
+  >
+    <path
+      fill="currentColor"
+      d="M9.4 86.6C-3.1 74.1-3.1 53.9 9.4 41.4s32.8-12.5 45.3 0l192 192c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L178.7 256 9.4 86.6zM256 416l288 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-288 0c-17.7 0-32-14.3-32-32s14.3-32 32-32z"
+    />
+  </svg>
+);
+
+// Language icon mapping using React Icons and custom SVGs
+const languageIcons: Record<string, FC<{ className?: string }>> = {
+  javascript: SiJavascript,
+  js: SiJavascript,
+  typescript: SiTypescript,
+  ts: SiTypescript,
+  jsx: SiReact,
+  tsx: SiReact,
+  html: SiHtml5,
+  css: SiCss3,
+  python: SiPython,
+  java: SiJava,
+  php: SiPhp,
+  swift: SiSwift,
+  rust: SiRust,
+  go: SiGo,
+  docker: SiDocker,
+  kotlin: SiKotlin,
+  csharp: SiCsharp,
+  "c#": SiCsharp,
+  cpp: SiCplusplus,
+  "c++": SiCplusplus,
+  ruby: SiRuby,
+  scala: SiScala,
+  bash: Shell,
+  shell: Shell,
+  sh: Shell
+};
+
+interface CodeBlockProps {
+  language: string;
+  fileName?: string;
+  code: string;
+  showMermaidPreview?: boolean;
+}
+
+export const CodeBlock: FC<CodeBlockProps> = memo(
+  ({ language, fileName, code, showMermaidPreview }) => {
+    const [copied, setCopied] = useState(false);
+    const [showMermaidDialog, setShowMermaidDialog] = useState(false);
+
+    const handleCopy = async () => {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    };
+
+    const lang = language.toLowerCase();
+    const Icon = languageIcons[lang] || FiCode;
+
+    return (
+      <div className="w-full overflow-hidden rounded-md border border-slate-200 bg-slate-50 shadow-sm">
+        <div className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-2">
+          <div className="flex items-center gap-2">
+            <Icon className="h-5 w-5 text-slate-600" />
+            <span className="text-sm text-slate-700">{fileName}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="transition-colors hover:bg-slate-100"
+                    onClick={handleCopy}
+                  >
+                    {copied ? (
+                      <Check className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <Copy className="h-4 w-4 text-slate-600" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{copied ? "Copied!" : "Copy code"}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            {showMermaidPreview && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="transition-colors hover:bg-slate-100"
+                      onClick={() => setShowMermaidDialog(true)}
+                    >
+                      <ExternalLink className="h-4 w-4 text-slate-600" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Preview Mermaid diagram</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
+        </div>
+        <div className="overflow-x-auto p-4">
+          <SyntaxHighlighter
+            language={lang}
+            style={oneLight}
+            customStyle={{
+              margin: 0,
+              padding: 0,
+              fontSize: "1rem",
+              maxHeight: "500px",
+              background: "transparent"
+            }}
+          >
+            {code}
+          </SyntaxHighlighter>
+        </div>
+        {showMermaidPreview && (
+          <Modal
+            isOpen={showMermaidDialog}
+            onClose={() => setShowMermaidDialog(false)}
+            title="Mermaid Diagram Preview"
+            size="lg"
+          >
+            <Mermaid content={code} />
+          </Modal>
+        )}
+      </div>
+    );
+  }
+);
+
+CodeBlock.displayName = "CodeBlock";

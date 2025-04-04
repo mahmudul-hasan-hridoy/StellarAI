@@ -1,0 +1,345 @@
+
+Build Error
+Failed to compile
+
+./app/chat/new/page.tsx
+Error: 
+  × the name `chatId` is defined multiple times
+     ╭─[/home/runner/workspace/app/chat/new/page.tsx:51:1]
+  51 │       setInputValue("")
+  52 │       
+  53 │       // Create a new chat
+  54 │       const chatId = await createChat({
+     ·             ───┬──
+     ·                ╰── previous definition of `chatId` here
+  55 │         title: message.slice(0, 50) + (message.length > 50 ? "..." : ""),
+  56 │         userId: user.uid,
+  57 │       })
+  58 │       
+  59 │       // Send the message to the API
+  60 │       const response = await fetch("/api/chat", {
+  61 │         method: "POST",
+  62 │         headers: {
+  63 │           "Content-Type": "application/json",
+  64 │         },
+  65 │         body: JSON.stringify({
+  66 │           message,
+  67 │           chatId,
+  68 │           userId: user.uid,
+  69 │           systemPrompt: "", // Use default or add system prompt selection
+  70 │         }),
+  71 │       })
+  72 │       
+  73 │       if (!response.ok) {
+  74 │         const error = await response.json()
+  75 │         throw new Error(error.message || "Failed to send message")
+  76 │       }
+  77 │       
+  78 │       if (!response.body) {
+  79 │         throw new Error("Response body is null")
+  80 │       }
+  81 │       
+  82 │       // Process the streaming response
+  83 │       const reader = response.body.getReader()
+  84 │       const decoder = new TextDecoder()
+  85 │       
+  86 │       while (true) {
+  87 │         const { done, value } = await reader.read()
+  88 │         
+  89 │         if (done) {
+  90 │           break
+  91 │         }
+  92 │         
+  93 │         const chunk = decoder.decode(value, { stream: true })
+  94 │         const lines = chunk.split("\n").filter(line => line.trim() !== "")
+  95 │         
+  96 │         for (const line of lines) {
+  97 │           if (line.startsWith("data: ")) {
+  98 │             const data = line.slice(6)
+  99 │             
+ 100 │             if (data === "[DONE]") {
+ 101 │               continue
+ 102 │             }
+ 103 │             
+ 104 │             try {
+ 105 │               const parsed = JSON.parse(data)
+ 106 │               const content = parsed.content || ""
+ 107 │               
+ 108 │               if (content) {
+ 109 │                 setStreamingMessage(prev => prev + content)
+ 110 │               }
+ 111 │             } catch (e) {
+ 112 │               console.error("Error parsing chunk:", e)
+ 113 │             }
+ 114 │           }
+ 115 │         }
+ 116 │       }
+ 117 │       
+ 118 │       // After streaming is complete, redirect to the chat page
+ 119 │       router.push(`/chat/${chatId}`)
+ 120 │ 
+ 121 │       // Create a new chat with the initial message
+ 122 │       const chatId = await createChat(user.uid, inputValue)
+     ·             ───┬──
+     ·                ╰── `chatId` redefined here
+ 123 │ 
+ 124 │       // Reset input
+ 125 │       setInputValue("")
+     ╰────
+
+  × the name `response` is defined multiple times
+     ╭─[/home/runner/workspace/app/chat/new/page.tsx:57:1]
+  57 │       })
+  58 │       
+  59 │       // Send the message to the API
+  60 │       const response = await fetch("/api/chat", {
+     ·             ────┬───
+     ·                 ╰── previous definition of `response` here
+  61 │         method: "POST",
+  62 │         headers: {
+  63 │           "Content-Type": "application/json",
+  64 │         },
+  65 │         body: JSON.stringify({
+  66 │           message,
+  67 │           chatId,
+  68 │           userId: user.uid,
+  69 │           systemPrompt: "", // Use default or add system prompt selection
+  70 │         }),
+  71 │       })
+  72 │       
+  73 │       if (!response.ok) {
+  74 │         const error = await response.json()
+  75 │         throw new Error(error.message || "Failed to send message")
+  76 │       }
+  77 │       
+  78 │       if (!response.body) {
+  79 │         throw new Error("Response body is null")
+  80 │       }
+  81 │       
+  82 │       // Process the streaming response
+  83 │       const reader = response.body.getReader()
+  84 │       const decoder = new TextDecoder()
+  85 │       
+  86 │       while (true) {
+  87 │         const { done, value } = await reader.read()
+  88 │         
+  89 │         if (done) {
+  90 │           break
+  91 │         }
+  92 │         
+  93 │         const chunk = decoder.decode(value, { stream: true })
+  94 │         const lines = chunk.split("\n").filter(line => line.trim() !== "")
+  95 │         
+  96 │         for (const line of lines) {
+  97 │           if (line.startsWith("data: ")) {
+  98 │             const data = line.slice(6)
+  99 │             
+ 100 │             if (data === "[DONE]") {
+ 101 │               continue
+ 102 │             }
+ 103 │             
+ 104 │             try {
+ 105 │               const parsed = JSON.parse(data)
+ 106 │               const content = parsed.content || ""
+ 107 │               
+ 108 │               if (content) {
+ 109 │                 setStreamingMessage(prev => prev + content)
+ 110 │               }
+ 111 │             } catch (e) {
+ 112 │               console.error("Error parsing chunk:", e)
+ 113 │             }
+ 114 │           }
+ 115 │         }
+ 116 │       }
+ 117 │       
+ 118 │       // After streaming is complete, redirect to the chat page
+ 119 │       router.push(`/chat/${chatId}`)
+ 120 │ 
+ 121 │       // Create a new chat with the initial message
+ 122 │       const chatId = await createChat(user.uid, inputValue)
+ 123 │ 
+ 124 │       // Reset input
+ 125 │       setInputValue("")
+ 126 │ 
+ 127 │       // Reset textarea height
+ 128 │       if (textareaRef.current) {
+ 129 │         textareaRef.current.style.height = "auto"
+ 130 │       }
+ 131 │ 
+ 132 │       // Stream the AI response
+ 133 │       const response = await fetch("/api/chat", {
+     ·             ────┬───
+     ·                 ╰── `response` redefined here
+ 134 │         method: "POST",
+ 135 │         headers: {
+ 136 │           "Content-Type": "application/json",
+     ╰────
+
+  × the name `reader` is defined multiple times
+     ╭─[/home/runner/workspace/app/chat/new/page.tsx:80:1]
+  80 │       }
+  81 │       
+  82 │       // Process the streaming response
+  83 │       const reader = response.body.getReader()
+     ·             ───┬──
+     ·                ╰── previous definition of `reader` here
+  84 │       const decoder = new TextDecoder()
+  85 │       
+  86 │       while (true) {
+  87 │         const { done, value } = await reader.read()
+  88 │         
+  89 │         if (done) {
+  90 │           break
+  91 │         }
+  92 │         
+  93 │         const chunk = decoder.decode(value, { stream: true })
+  94 │         const lines = chunk.split("\n").filter(line => line.trim() !== "")
+  95 │         
+  96 │         for (const line of lines) {
+  97 │           if (line.startsWith("data: ")) {
+  98 │             const data = line.slice(6)
+  99 │             
+ 100 │             if (data === "[DONE]") {
+ 101 │               continue
+ 102 │             }
+ 103 │             
+ 104 │             try {
+ 105 │               const parsed = JSON.parse(data)
+ 106 │               const content = parsed.content || ""
+ 107 │               
+ 108 │               if (content) {
+ 109 │                 setStreamingMessage(prev => prev + content)
+ 110 │               }
+ 111 │             } catch (e) {
+ 112 │               console.error("Error parsing chunk:", e)
+ 113 │             }
+ 114 │           }
+ 115 │         }
+ 116 │       }
+ 117 │       
+ 118 │       // After streaming is complete, redirect to the chat page
+ 119 │       router.push(`/chat/${chatId}`)
+ 120 │ 
+ 121 │       // Create a new chat with the initial message
+ 122 │       const chatId = await createChat(user.uid, inputValue)
+ 123 │ 
+ 124 │       // Reset input
+ 125 │       setInputValue("")
+ 126 │ 
+ 127 │       // Reset textarea height
+ 128 │       if (textareaRef.current) {
+ 129 │         textareaRef.current.style.height = "auto"
+ 130 │       }
+ 131 │ 
+ 132 │       // Stream the AI response
+ 133 │       const response = await fetch("/api/chat", {
+ 134 │         method: "POST",
+ 135 │         headers: {
+ 136 │           "Content-Type": "application/json",
+ 137 │         },
+ 138 │         body: JSON.stringify({
+ 139 │           message: inputValue,
+ 140 │           chatId,
+ 141 │           userId: user.uid,
+ 142 │           model: selectedModel,
+ 143 │         }),
+ 144 │       })
+ 145 │ 
+ 146 │       if (!response.ok) {
+ 147 │         throw new Error(`API responded with status ${response.status}`)
+ 148 │       }
+ 149 │ 
+ 150 │       const reader = response.body?.getReader()
+     ·             ───┬──
+     ·                ╰── `reader` redefined here
+ 151 │       if (!reader) {
+ 152 │         throw new Error("Failed to get response reader")
+ 153 │       }
+     ╰────
+
+  × the name `decoder` is defined multiple times
+     ╭─[/home/runner/workspace/app/chat/new/page.tsx:81:1]
+  81 │       
+  82 │       // Process the streaming response
+  83 │       const reader = response.body.getReader()
+  84 │       const decoder = new TextDecoder()
+     ·             ───┬───
+     ·                ╰── previous definition of `decoder` here
+  85 │       
+  86 │       while (true) {
+  87 │         const { done, value } = await reader.read()
+  88 │         
+  89 │         if (done) {
+  90 │           break
+  91 │         }
+  92 │         
+  93 │         const chunk = decoder.decode(value, { stream: true })
+  94 │         const lines = chunk.split("\n").filter(line => line.trim() !== "")
+  95 │         
+  96 │         for (const line of lines) {
+  97 │           if (line.startsWith("data: ")) {
+  98 │             const data = line.slice(6)
+  99 │             
+ 100 │             if (data === "[DONE]") {
+ 101 │               continue
+ 102 │             }
+ 103 │             
+ 104 │             try {
+ 105 │               const parsed = JSON.parse(data)
+ 106 │               const content = parsed.content || ""
+ 107 │               
+ 108 │               if (content) {
+ 109 │                 setStreamingMessage(prev => prev + content)
+ 110 │               }
+ 111 │             } catch (e) {
+ 112 │               console.error("Error parsing chunk:", e)
+ 113 │             }
+ 114 │           }
+ 115 │         }
+ 116 │       }
+ 117 │       
+ 118 │       // After streaming is complete, redirect to the chat page
+ 119 │       router.push(`/chat/${chatId}`)
+ 120 │ 
+ 121 │       // Create a new chat with the initial message
+ 122 │       const chatId = await createChat(user.uid, inputValue)
+ 123 │ 
+ 124 │       // Reset input
+ 125 │       setInputValue("")
+ 126 │ 
+ 127 │       // Reset textarea height
+ 128 │       if (textareaRef.current) {
+ 129 │         textareaRef.current.style.height = "auto"
+ 130 │       }
+ 131 │ 
+ 132 │       // Stream the AI response
+ 133 │       const response = await fetch("/api/chat", {
+ 134 │         method: "POST",
+ 135 │         headers: {
+ 136 │           "Content-Type": "application/json",
+ 137 │         },
+ 138 │         body: JSON.stringify({
+ 139 │           message: inputValue,
+ 140 │           chatId,
+ 141 │           userId: user.uid,
+ 142 │           model: selectedModel,
+ 143 │         }),
+ 144 │       })
+ 145 │ 
+ 146 │       if (!response.ok) {
+ 147 │         throw new Error(`API responded with status ${response.status}`)
+ 148 │       }
+ 149 │ 
+ 150 │       const reader = response.body?.getReader()
+ 151 │       if (!reader) {
+ 152 │         throw new Error("Failed to get response reader")
+ 153 │       }
+ 154 │ 
+ 155 │       const decoder = new TextDecoder()
+     ·             ───┬───
+     ·                ╰── `decoder` redefined here
+ 156 │       let accumulatedResponse = ""
+ 157 │ 
+ 158 │       while (true) {
+     ╰────
+This error occurred during the build process and can only be dismissed by fixing the error.
