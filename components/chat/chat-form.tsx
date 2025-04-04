@@ -33,11 +33,11 @@ export function ChatForm({
   // Update model based on attachments and deep think mode
   useEffect(() => {
     if (attachedFiles.length > 0) {
-      setSelectedModel("gpt-4");
+      setSelectedModel("gpt-4o");
     } else if (deepThink) {
-      setSelectedModel("deepseek-r1");
+      setSelectedModel("Deepseek-r1");
     } else {
-      setSelectedModel("deepseek-v3");
+      setSelectedModel("Deepseek-v3");
     }
   }, [attachedFiles.length, deepThink]);
 

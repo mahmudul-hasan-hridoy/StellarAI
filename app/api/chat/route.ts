@@ -64,9 +64,9 @@ export async function POST(req: NextRequest) {
         { role: "user", content: message },
       ],
       stream: true,
-      model: message.attachments?.length > 0 ? "gpt-4" : 
-             systemPrompt?.includes("deep_think") ? "deepseek-r1" : 
-             "deepseek-v3",
+      model: message.attachments?.length > 0 ? "gpt-4o" : 
+             systemPrompt?.includes("deep_think") ? "Deepseek-r1" : 
+             "Deepseek-v3",
     });
 
     // Call Azure OpenAI API with streaming enabled
