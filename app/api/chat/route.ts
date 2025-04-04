@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     await addMessage(chatId, {
       role: "user",
       content: message || "Sent attachment",
-      attachments: attachments.length > 0 ? attachments : undefined
+      ...(attachments && attachments.length > 0 && { attachments })
     });
 
     // Prepare request body for Azure OpenAI API
@@ -127,6 +127,7 @@ export async function POST(req: NextRequest) {
         await addMessage(chatId, {
           role: "assistant",
           content: fullContent,
+          attachments: []
         });
       },
     });
