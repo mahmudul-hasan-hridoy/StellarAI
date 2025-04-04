@@ -28,6 +28,7 @@ export function ChatForm({
   const [inputValue, setInputValue] = useState(initialValue);
   const [selectedModel, setSelectedModel] = useState("deepseek-v3");
   const [deepThink, setDeepThink] = useState(false);
+  const [attachedFiles, setAttachedFiles] = useState<StoredFile[]>([]);
   
   // Update model based on attachments and deep think mode
   useEffect(() => {
@@ -39,7 +40,6 @@ export function ChatForm({
       setSelectedModel("deepseek-v3");
     }
   }, [attachedFiles.length, deepThink]);
-  const [attachedFiles, setAttachedFiles] = useState<StoredFile[]>([]);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
