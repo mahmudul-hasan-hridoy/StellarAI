@@ -20,7 +20,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<User>
   logOut: () => Promise<void>
   resetPassword: (email: string) => Promise<void>
-  updateUserProfile: (displayName: string) => Promise<void>
+  updateUserProfile: (displayName: string, photoURL?: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -50,7 +50,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signUp = async (email: string, password: string, displayName: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-    await updateProfile(userCredential.user, { displayName })
+    // Generate avatar URL based on user ID
+    const avatarUrl = `https://avatar.vercel.sh/${userCredential.user.uid}`
+    await updateProfile(userCredential.user, { 
+      displayName,
+      photoURL: avatarUrl
+    })
   }
 
   const signIn = async (email: string, password: string): Promise<User> => {
@@ -84,9 +89,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await sendPasswordResetEmail(auth, email)
   }
 
-  const updateUserProfile = async (displayName: string) => {
+  const updateUserProfile = async (displayName: string, photoURL?: string) => {
     if (auth.currentUser) {
-      await updateProfile(auth.currentUser, { displayName })
+      // If photoURL is not provided, keep existing one or generate from user ID
+      const avatarUrl = photoURL || auth.currentUser.photoURL || `https://avatar.vercel.sh/${auth.currentUser.uid}`
+      await updateProfile(auth.currentUser, { 
+        displayName,
+        photoURL: avatarUrl
+      })
       // Force refresh the user state
       setUser({ ...auth.currentUser })
     }
