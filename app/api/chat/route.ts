@@ -10,19 +10,19 @@ export async function POST(req: NextRequest) {
   try {
     const {
       messages,
-      systemPrompt = "",
       chatId,
       userId,
       model = "DeepSeek-V3",
       temperature = 0.7,
       maxTokens = 2048,
       topP = 0.95,
+      attachments = []
     } = await req.json()
 
     // Check for required fields
-    if (!messages || !chatId || !userId) {
+    if (!chatId || !userId) {
       return new Response(
-        JSON.stringify({ error: "Missing required fields: messages, chatId, and userId are required" }),
+        JSON.stringify({ error: "Missing required fields: chatId and userId are required" }),
         {
           status: 400,
           headers: { "Content-Type": "application/json" },
@@ -30,8 +30,11 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Handle both single message and messages array format
+    const userMessages = Array.isArray(messages) ? messages : [{ role: "user", content: messages.message || messages }];
+    
     // Get the latest user message
-    const lastMessage = messages[messages.length - 1]
+    const lastMessage = userMessages[userMessages.length - 1]
     if (lastMessage.role !== "user") {
       return new Response(JSON.stringify({ error: "Last message must be from user" }), {
         status: 400,
@@ -43,44 +46,68 @@ export async function POST(req: NextRequest) {
     await addMessage(chatId, {
       role: "user",
       content: lastMessage.content,
+      attachments: attachments,
+      timestamp: new Date().toISOString()
     })
 
     // Prepare messages for the AI model
     const aiMessages = [
       {
         role: "system",
-        content: systemPrompt || 
+        content: messages.systemPrompt || 
           "You are an AI assistant specialized in code generation and problem-solving. Provide clear, concise, and efficient solutions.",
       },
-      ...messages.map(msg => ({
+      ...userMessages.map(msg => ({
         role: msg.role,
         content: msg.content,
       })),
     ]
 
-    // Use the AI SDK to stream the response
-    const stream = streamText({
-      model: openai.azure({
-        apiVersion: "2023-12-01-preview",
-        endpoint: process.env.AZURE_ENDPOINT || "",
+    // Create the AI response stream
+    const result = await streamText({
+      model: openai("gpt-4o-mini", {
         apiKey: process.env.AZURE_API_KEY || "",
-        deployment: "gpt-4o-mini",
+        baseURL: process.env.AZURE_ENDPOINT || "",
+        apiVersion: "2023-12-01-preview",
       }),
       messages: aiMessages,
       temperature,
       maxTokens,
       topP,
-      onCompletion: async (completion) => {
-        // Save the complete response to Firestore
-        await addMessage(chatId, {
-          role: "assistant",
-          content: completion,
-          timestamp: new Date().toLocaleString(),
-        })
-      },
-    })
+    });
+    
+    // Create a readable stream for the client
+    const stream = new ReadableStream({
+      async start(controller) {
+        // Process the stream chunks
+        const encoder = new TextEncoder();
+        const decoder = new TextDecoder();
+        
+        let text = "";
+        const reader = result.getReader();
+        
+        while (true) {
+          const { done, value } = await reader.read();
+          
+          if (done) {
+            // Save the complete response to Firestore
+            await addMessage(chatId, {
+              role: "assistant",
+              content: text,
+              timestamp: new Date().toISOString(),
+            });
+            
+            controller.close();
+            break;
+          }
+          
+          text += value;
+          controller.enqueue(encoder.encode(value));
+        }
+      }
+    });
 
-    return new Response(stream)
+    return new Response(stream);
   } catch (error) {
     console.error("Error processing request:", error)
     return new Response(
