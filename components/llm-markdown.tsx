@@ -340,7 +340,7 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(
     const lines = content.split("\n");
 
     let currentParagraph: string[] = [];
-    let currentCodeBlock: { language: string; code: string[] } | null = null;
+    let currentCodeBlock: { language: string; code: string[]; filename?: string } | null = null;
     let currentListItems: string[] = [];
     let currentListType: "ul" | "ol" | null = null;
     let inBlockQuote = false;
