@@ -63,10 +63,23 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
         <div className="flex-1 space-y-2 sm:space-y-3 max-w-[97%] sm:max-w-[85%] md:max-w-[90%]">
           {hasAttachments && (
             <div className="mb-3 space-y-2">
-              <div className="text-xs text-gray-400 font-medium">Attachments:</div>
-              <div className="flex flex-wrap gap-2">
-                {message.attachments?.map((fileId) => (
-                  <FileAttachmentDisplay key={fileId} fileId={fileId} />
+              <div className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
+                <span>Attachments:</span>
+                <span className="bg-secondary/50 text-muted-foreground px-1.5 py-0.5 rounded text-[10px]">
+                  {message.attachments?.length || 0}
+                </span>
+              </div>
+              <div className="flex flex-col sm:flex-row flex-wrap gap-3">
+                {message.attachments?.map((fileId, index) => (
+                  <motion.div 
+                    key={`${fileId}-${index}`}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                    className="w-full sm:max-w-[300px]"
+                  >
+                    <FileAttachmentDisplay fileId={fileId} />
+                  </motion.div>
                 ))}
               </div>
             </div>

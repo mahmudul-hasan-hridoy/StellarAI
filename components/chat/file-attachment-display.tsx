@@ -3,13 +3,14 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { FileIcon, ExternalLink, Download, Info } from "lucide-react";
+import { FileIcon, ExternalLink, Download, Info, Loader2 } from "lucide-react";
 import { FileViewer } from "@/components/file-viewer";
 import { getFileById } from "@/lib/file-service";
 import { truncateFilename } from "@/lib/utils";
 import { StoredFilePreview } from "@/components/file-preview";
 import type { StoredFile } from "@/lib/types";
 import { motion } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
 
 interface FileAttachmentDisplayProps {
   fileId: string;
@@ -21,42 +22,91 @@ export function FileAttachmentDisplay({ fileId }: FileAttachmentDisplayProps) {
   const [error, setError] = useState<string | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const { toast } = useToast();
 
   useEffect(() => {
     const loadFile = async () => {
       try {
         setLoading(true);
+        setError(null);
+        
+        console.log(`Loading file with ID: ${fileId}`);
         const fileData = await getFileById(fileId);
+        
+        if (!fileData) {
+          console.error(`File not found: ${fileId}`);
+          setError("File not found");
+          return;
+        }
+        
+        if (!fileData.fileUrl) {
+          console.error(`File URL missing: ${fileId}`);
+          setError("File URL missing");
+          return;
+        }
+        
+        console.log(`File loaded successfully: ${fileData.fileName}`);
         setFile(fileData);
       } catch (err) {
-        console.error("Error loading file:", err);
-        setError("Could not load file");
+        console.error(`Error loading file ${fileId}:`, err);
+        setError(`Could not load file: ${err instanceof Error ? err.message : 'Unknown error'}`);
       } finally {
         setLoading(false);
       }
     };
 
-    loadFile();
-  }, [fileId]);
+    if (fileId) {
+      loadFile();
+    } else {
+      setError("Invalid file ID");
+      setLoading(false);
+    }
+  }, [fileId, retryCount]);
+
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+  };
 
   if (loading) {
     return (
-      <div className="flex items-center p-3 text-sm bg-secondary/20 rounded-lg border border-border/40 animate-pulse">
-        <div className="h-10 w-10 rounded-md bg-secondary/50 mr-3"></div>
-        <div className="space-y-2 flex-1">
-          <div className="h-4 w-32 bg-secondary/50 rounded"></div>
-          <div className="h-3 w-16 bg-secondary/30 rounded"></div>
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex items-center p-3 text-sm bg-secondary/20 rounded-lg border border-border/40 w-full sm:max-w-md"
+      >
+        <div className="flex items-center justify-center h-10 w-10 rounded-md bg-secondary/50 mr-3">
+          <Loader2 className="h-5 w-5 animate-spin text-primary/70" />
         </div>
-      </div>
+        <div className="space-y-2 flex-1">
+          <div className="h-4 w-32 bg-secondary/50 rounded animate-pulse"></div>
+          <div className="h-3 w-16 bg-secondary/30 rounded animate-pulse"></div>
+        </div>
+      </motion.div>
     );
   }
 
   if (error || !file) {
     return (
-      <div className="flex items-center p-3 text-sm bg-destructive/10 rounded-lg border border-destructive/20">
-        <FileIcon className="mr-2 h-5 w-5 text-destructive/70" />
-        <span className="text-foreground/80">Attachment unavailable</span>
-      </div>
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex flex-col p-3 text-sm bg-background rounded-lg border border-border/30 w-full sm:max-w-md"
+      >
+        <div className="flex items-center">
+          <FileIcon className="mr-2 h-5 w-5 text-destructive/70" />
+          <span className="text-foreground/80 font-medium">Attachment unavailable</span>
+        </div>
+        <p className="text-xs mt-1 text-muted-foreground">{error || "File could not be loaded"}</p>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={handleRetry} 
+          className="mt-2 self-end h-7 text-xs"
+        >
+          Retry loading
+        </Button>
+      </motion.div>
     );
   }
 
@@ -81,7 +131,7 @@ export function FileAttachmentDisplay({ fileId }: FileAttachmentDisplayProps) {
           file={file} 
           onClick={() => isPreviewable && setViewerOpen(true)}
           showRemoveButton={false}
-          className="w-full"
+          className="w-full cursor-pointer transition-all duration-200 hover:scale-[1.01] hover:shadow-md"
         />
         
         <motion.div 
@@ -107,7 +157,18 @@ export function FileAttachmentDisplay({ fileId }: FileAttachmentDisplayProps) {
             className="h-8 bg-secondary/40 hover:bg-primary/10 hover:text-primary border-border/50 hover:border-primary/30 transition-all duration-200" 
             asChild
           >
-            <a href={file.fileUrl} download={file.fileName}>
+            <a 
+              href={file.fileUrl} 
+              download={file.fileName}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => {
+                toast({
+                  title: "Download started",
+                  description: `Downloading ${file.fileName}`,
+                });
+              }}
+            >
               <Download className="h-3.5 w-3.5 mr-1.5" />
               <span className="text-xs sm:text-sm">Download</span>
             </a>

@@ -56,6 +56,7 @@ Your job is to make me a more effective developer by being my high-level strateg
     // If there are attachments, process them for AI model compatibility
     if (attachments && attachments.length > 0) {
       try {
+        console.log(`Processing ${attachments.length} attachments:`, attachments);
         const lastMessageIndex = processedMessages.length - 1;
         
         // Ensure the content object is properly structured for attachments
@@ -71,37 +72,64 @@ Your job is to make me a more effective developer by being my high-level strateg
         
         // Process each attachment
         for (const attachmentId of attachments) {
+          console.log(`Processing attachment ID: ${attachmentId}`);
           const file = await getFileById(attachmentId);
-          if (file && file.fileUrl) {
-            try {
-              // Fetch the file content and convert to base64
-              const response = await fetch(file.fileUrl);
-              const arrayBuffer = await response.arrayBuffer();
-              const base64 = Buffer.from(arrayBuffer).toString('base64');
-              
-              // Add image attachment in OpenAI-compatible format
-              if (file.fileType?.startsWith('image/')) {
-                content.push({
-                  type: 'image_url',
-                  image_url: {
-                    url: `data:${file.fileType};base64,${base64}`
-                  }
-                });
-              } else {
-                // For non-image files, include as text with base64 data
-                content.push({
-                  type: 'text',
-                  text: `[File: ${file.fileName} (${file.fileType})]
-                  Content (base64): ${base64.substring(0, 100)}...`
-                });
-              }
-            } catch (error) {
-              console.error(`Error processing attachment ${attachmentId}:`, error);
+          
+          if (!file) {
+            console.error(`File not found for ID: ${attachmentId}`);
+            content.push({
+              type: 'text',
+              text: `[File not found for ID: ${attachmentId}]`
+            });
+            continue;
+          }
+          
+          if (!file.fileUrl) {
+            console.error(`File URL missing for: ${file.fileName} (${attachmentId})`);
+            content.push({
+              type: 'text',
+              text: `[File URL missing: ${file.fileName}]`
+            });
+            continue;
+          }
+          
+          console.log(`Processing file: ${file.fileName} (${file.fileType})`);
+          
+          try {
+            // Fetch the file content and convert to base64
+            const response = await fetch(file.fileUrl);
+            
+            if (!response.ok) {
+              throw new Error(`Failed to fetch file: ${response.status} ${response.statusText}`);
+            }
+            
+            const arrayBuffer = await response.arrayBuffer();
+            const base64 = Buffer.from(arrayBuffer).toString('base64');
+            
+            // Add image attachment in OpenAI-compatible format
+            if (file.fileType?.startsWith('image/')) {
+              console.log(`Adding image attachment: ${file.fileName}`);
+              content.push({
+                type: 'image_url',
+                image_url: {
+                  url: `data:${file.fileType};base64,${base64}`
+                }
+              });
+            } else {
+              // For non-image files, include as text with base64 data
+              console.log(`Adding non-image attachment: ${file.fileName}`);
               content.push({
                 type: 'text',
-                text: `[Error processing attachment: ${file.fileName}]`
+                text: `[File: ${file.fileName} (${file.fileType})]
+                Content (base64): ${base64.substring(0, 100)}...`
               });
             }
+          } catch (error) {
+            console.error(`Error processing attachment ${attachmentId}:`, error);
+            content.push({
+              type: 'text',
+              text: `[Error processing attachment: ${file.fileName} - ${error instanceof Error ? error.message : 'Unknown error'}]`
+            });
           }
         }
         
