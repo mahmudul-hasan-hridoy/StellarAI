@@ -133,47 +133,38 @@ export async function POST(req: NextRequest) {
                 console.warn("JSON parse error, attempting to sanitize:", jsonError.message);
                 
                 if (jsonData && typeof jsonData === 'string') {
-                  // Strategy 1: Extract content using regex if format is recognizable
+                  // More robust content extraction using regex pattern
+                  let content = null;
+                  
+                  // First attempt: Look for content pattern in malformed JSON
                   if (jsonData.includes('"content":')) {
-                    // Look for content pattern even if quotes are unterminated
+                    // This pattern matches content even with unterminated quotes or malformed JSON
                     const contentMatch = jsonData.match(/"content":\s*"([^]*?)(?:"|$)/);
                     if (contentMatch && contentMatch[1]) {
-                      const content = contentMatch[1];
-                      fullContent += content;
-                      controller.enqueue(`data: ${JSON.stringify({ content })}\n\n`);
-                      console.log("Recovered content using pattern matching");
-                      continue; // Skip to next line after recovery
+                      content = contentMatch[1];
+                      // Sanitize control characters that might cause issues
+                      content = content.replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
                     }
                   }
                   
-                  // Strategy 2: For unterminated strings, try to fix JSON
-                  try {
-                    // Add missing quote for unterminated string if that's the issue
-                    if (jsonError.message.includes("Unterminated string")) {
-                      const fixedJson = jsonData + '"}}';
-                      const parsed = JSON.parse(fixedJson);
-                      const content = parsed.choices?.[0]?.delta?.content;
-                      
-                      if (content) {
-                        fullContent += content;
-                        controller.enqueue(`data: ${JSON.stringify({ content })}\n\n`);
-                        console.log("Recovered content by fixing unterminated string");
-                        continue;
+                  // Second attempt: If the first attempt fails, try a more general approach
+                  if (!content && jsonData.includes('content')) {
+                    try {
+                      // Try to find any text between quotes after "content":
+                      const textBetweenQuotes = jsonData.replace(/.*content"?\s*:\s*"([^"]*).*/, "$1");
+                      if (textBetweenQuotes && textBetweenQuotes !== jsonData) {
+                        content = textBetweenQuotes;
                       }
+                    } catch (e) {
+                      // Ignore errors in this fallback approach
                     }
-                  } catch (secondaryError) {
-                    // If fixing also fails, continue to next strategy
                   }
                   
-                  // Strategy 3: Just extract anything between "content": " and the next "
-                  const roughContentMatch = jsonData.match(/"content":\s*"([^"]*)/);
-                  if (roughContentMatch && roughContentMatch[1]) {
-                    const content = roughContentMatch[1];
-                    if (content.trim()) {
-                      fullContent += content;
-                      controller.enqueue(`data: ${JSON.stringify({ content })}\n\n`);
-                      console.log("Recovered partial content as fallback");
-                    }
+                  // If we found content through any method, process it
+                  if (content && content.trim()) {
+                    fullContent += content;
+                    controller.enqueue(`data: ${JSON.stringify({ content })}\n\n`);
+                    console.log("Recovered content from malformed JSON");
                   }
                 }
               }

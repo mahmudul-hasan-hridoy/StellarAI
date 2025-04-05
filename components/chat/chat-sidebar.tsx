@@ -15,6 +15,7 @@ import {
   Settings,
   FileIcon
 } from "lucide-react";
+import UserDropdown from "./user-dropdown";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -176,14 +177,8 @@ export default function ChatSidebar() {
           <FileIcon className="mr-3 h-4 w-4" />
           Files
         </Link>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start gap-2 text-gray-400 hover:text-white hover:bg-gray-800"
-        >
-          <Settings className="h-4 w-4" />
-          Settings
-        </Button>
+        
+        <UserDropdown />
       </div>
     </div>
   );
