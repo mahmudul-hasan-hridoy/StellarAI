@@ -69,7 +69,7 @@ export const FilePreview = React.memo(
 
     return (
       <div className="group relative" onClick={onClick}>
-        <div className="w-48 cursor-pointer rounded-lg border border-gray-200 bg-secondary/30 p-2 transition-colors hover:bg-secondary/50">
+        <div className="w-full sm:w-48 cursor-pointer rounded-lg border border-border bg-secondary/30 p-2 transition-all duration-200 hover:bg-secondary/50 hover:border-primary/30 hover:shadow-sm hover:shadow-primary/10">
           <div className="flex items-start gap-2">
             <div className="flex-shrink-0 overflow-hidden rounded-md">
               {isImage && attachment.preview ? (
@@ -77,17 +77,17 @@ export const FilePreview = React.memo(
                   <img
                     src={attachment.preview}
                     alt={attachment.file.name}
-                    className="h-10 w-10 object-cover"
+                    className="h-10 w-10 object-cover transition-transform hover:scale-105"
                   />
                 </div>
               ) : (
-                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-secondary/50">
+                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-secondary text-primary">
                   {icon}
                 </div>
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="mt-1 truncate text-sm">
+              <p className="mt-1 truncate text-sm font-medium">
                 {attachment.file.name}
               </p>
               <p className="mt-0.5 text-xs text-muted-foreground">
@@ -102,7 +102,7 @@ export const FilePreview = React.memo(
                 e.stopPropagation();
                 onRemove(attachment.id);
               }}
-              className="absolute -right-2 -top-2 z-20 overflow-visible rounded-full border border-gray-200 bg-background p-1 transition-colors hover:bg-secondary/50">
+              className="absolute -right-2 -top-2 z-20 overflow-visible rounded-full border border-border bg-card p-1 transition-colors hover:bg-primary/10 hover:border-primary/30 hover:text-primary">
               <X className="h-4 w-4" />
             </button>
           )}
@@ -133,7 +133,7 @@ export const StoredFilePreview = React.memo(
 
     return (
       <div className={cn("group relative", className)} onClick={onClick}>
-        <div className="w-full cursor-pointer rounded-lg border border-gray-200 bg-secondary/30 p-2 transition-colors hover:bg-secondary/50">
+        <div className="w-full cursor-pointer rounded-lg border border-border bg-secondary/30 p-2 transition-all duration-200 hover:bg-secondary/50 hover:border-primary/30 hover:shadow-sm hover:shadow-primary/10">
           <div className="flex items-start gap-2">
             <div className="flex-shrink-0 overflow-hidden rounded-md">
               {isImage && file.fileUrl ? (
@@ -142,17 +142,17 @@ export const StoredFilePreview = React.memo(
                     src={file.fileUrl}
                     alt={file.fileName}
                     fill
-                    className="object-cover"
+                    className="object-cover transition-transform hover:scale-105"
                   />
                 </div>
               ) : (
-                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-secondary/50">
+                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-secondary text-primary">
                   {icon}
                 </div>
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="mt-1 truncate text-sm">
+              <p className="mt-1 truncate text-sm font-medium">
                 {file.fileName}
               </p>
               <p className="mt-0.5 text-xs text-muted-foreground">
@@ -167,7 +167,7 @@ export const StoredFilePreview = React.memo(
                 e.stopPropagation();
                 onRemove(file.id);
               }}
-              className="absolute -right-2 -top-2 z-20 overflow-visible rounded-full border border-gray-200 bg-background p-1 transition-colors hover:bg-secondary/50">
+              className="absolute -right-2 -top-2 z-20 overflow-visible rounded-full border border-border bg-card p-1 transition-colors hover:bg-primary/10 hover:border-primary/30 hover:text-primary">
               <X className="h-4 w-4" />
             </button>
           )}
