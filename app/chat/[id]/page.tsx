@@ -180,10 +180,22 @@ export default function ChatPage({ params }: { params: { id: string } }) {
 
             try {
               const parsed = JSON.parse(data);
-              const content = parsed.content || "";
 
-              if (content) {
-                setStreamingMessage((prev) => prev + content);
+              // Handle different response formats
+              if (parsed.content) {
+                setStreamingMessage((prev) => prev + parsed.content);
+              } else if (parsed.done) {
+                // Stream completion marker - ensure we refresh messages
+                console.log("Stream completed, refreshing messages");
+
+                // Add a slight delay to ensure the message is saved to Firebase
+                setTimeout(async () => {
+                  const updatedChat = await getChat(params.id);
+                  if (updatedChat) {
+                    setMessages(updatedChat.messages || []);
+                    setStreamingMessage("");
+                  }
+                }, 500);
               }
             } catch (e) {
               console.error("Error parsing chunk:", e);
@@ -193,13 +205,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
       }
 
       // After streaming is complete, fetch the updated messages
-      const updatedChat = await getChat(params.id);
-      if (updatedChat) {
-        setMessages(updatedChat.messages || []);
-      }
 
-      // Clear streaming message as it's now in the messages array
-      setStreamingMessage("");
       refreshChats();
     } catch (error) {
       console.error("Error sending message:", error);
@@ -355,10 +361,22 @@ export default function ChatPage({ params }: { params: { id: string } }) {
 
                       try {
                         const parsed = JSON.parse(data);
-                        const content = parsed.content || "";
 
-                        if (content) {
-                          setStreamingMessage((prev) => prev + content);
+                        // Handle different response formats
+                        if (parsed.content) {
+                          setStreamingMessage((prev) => prev + parsed.content);
+                        } else if (parsed.done) {
+                          // Stream completion marker - ensure we refresh messages
+                          console.log("Stream completed, refreshing messages");
+
+                          // Add a slight delay to ensure the message is saved to Firebase
+                          setTimeout(async () => {
+                            const updatedChat = await getChat(params.id);
+                            if (updatedChat) {
+                              setMessages(updatedChat.messages || []);
+                              setStreamingMessage("");
+                            }
+                          }, 500);
                         }
                       } catch (e) {
                         console.error("Error parsing chunk:", e);
@@ -368,13 +386,6 @@ export default function ChatPage({ params }: { params: { id: string } }) {
                 }
 
                 // After streaming is complete, fetch the updated messages
-                const updatedChat = await getChat(params.id);
-                if (updatedChat) {
-                  setMessages(updatedChat.messages || []);
-                }
-
-                // Clear streaming message as it's now in the messages array
-                setStreamingMessage("");
                 refreshChats();
               } catch (error) {
                 console.error("Error sending message:", error);

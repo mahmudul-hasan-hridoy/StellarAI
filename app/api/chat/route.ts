@@ -69,14 +69,24 @@ export async function POST(req: NextRequest) {
             const chunk = JSON.stringify({ content });
             await writer.write(encoder.encode(`data: ${chunk}\n\n`));
           }
+
+          // Get usage data if available
+          if (part.usage) {
+            usage = part.usage;
+          }
         }
 
-        // Save the complete response to the database
+        // Save the complete response to the database - IMPORTANT: do this BEFORE sending done signal
         if (fullResponse) {
-          await addMessage(chatId, {
-            role: "assistant",
-            content: fullResponse,
-          });
+          try {
+            await addMessage(chatId, {
+              role: "assistant",
+              content: fullResponse,
+            });
+            console.log("AI response saved to database");
+          } catch (error) {
+            console.error("Error saving message to database:", error);
+          }
         }
 
         // Always send completion message, with usage if available

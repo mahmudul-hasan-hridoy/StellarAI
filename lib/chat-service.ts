@@ -80,9 +80,9 @@ export const getChat = async (chatId: string): Promise<Chat | null> => {
 
     const chatData = chatDoc.data();
 
+    // Fixed: Use the correct subcollection path for messages
     const messagesQuery = query(
-      collection(db, "messages"),
-      where("chatId", "==", chatId),
+      collection(db, "chats", chatId, "messages"),
       orderBy("timestamp", "asc"),
     );
 

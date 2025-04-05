@@ -51,7 +51,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
             </div>
           )}
 
-          <LLMMarkdown content={message.content || ""} />
+          <LLMMarkdown content={message.content || "No content available"} />
           <div className="text-xs text-muted-foreground">{formattedTime}</div>
         </div>
       </div>
