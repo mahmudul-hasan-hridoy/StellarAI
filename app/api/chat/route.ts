@@ -56,7 +56,6 @@ export async function POST(req: NextRequest) {
     // Process the stream
     (async () => {
       let fullResponse = "";
-      let usage = null;
 
       try {
         for await (const part of openaiStream) {
@@ -69,11 +68,6 @@ export async function POST(req: NextRequest) {
             const chunk = JSON.stringify({ content });
             await writer.write(encoder.encode(`data: ${chunk}\n\n`));
           }
-
-          // Get usage data if available
-          if (part.usage) {
-            usage = part.usage;
-          }
         }
 
         // Save the complete response to the database - IMPORTANT: do this BEFORE sending done signal
@@ -83,18 +77,11 @@ export async function POST(req: NextRequest) {
               role: "assistant",
               content: fullResponse,
             });
-            console.log("AI response saved to database");
+            
           } catch (error) {
             console.error("Error saving message to database:", error);
           }
         }
-
-        // Always send completion message, with usage if available
-        await writer.write(
-          encoder.encode(
-            `data: ${JSON.stringify({ done: true, usage: usage || {} })}\n\n`,
-          ),
-        );
 
         // Send the [DONE] message
         await writer.write(encoder.encode("data: [DONE]\n\n"));
