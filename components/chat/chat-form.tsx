@@ -27,7 +27,7 @@ export function ChatForm({
 }: ChatFormProps) {
   const [inputValue, setInputValue] = useState(initialValue);
   const [attachedFiles, setAttachedFiles] = useState<StoredFile[]>([]);
-  
+
   // We only use GPT-4o so no need for model selection
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);

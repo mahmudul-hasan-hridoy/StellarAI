@@ -76,10 +76,17 @@ export async function POST(req: NextRequest) {
             await addMessage(chatId, {
               role: "assistant",
               content: fullResponse,
+              timestamp: new Date().toISOString(), // Add timestamp for consistent message format
             });
-            
+
           } catch (error) {
             console.error("Error saving message to database:", error);
+            // Send error to client so they know something went wrong
+            await writer.write(encoder.encode(
+              `data: ${JSON.stringify({
+                error: "Failed to save message to database"
+              })}\n\n`
+            ));
           }
         }
 

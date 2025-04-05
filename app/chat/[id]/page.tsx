@@ -123,6 +123,10 @@ export default function ChatPage({ params }: { params: { id: string } }) {
         timestamp: new Date().toISOString(),
       };
 
+      // Save user message to database first
+      await addMessage(params.id, userMessage);
+      
+      // Then update UI
       setMessages((prev) => [...prev, userMessage]);
 
       // Scroll to bottom
