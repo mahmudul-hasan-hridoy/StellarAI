@@ -4,10 +4,18 @@ import { addMessage } from "@/lib/chat-service";
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, message, chatId, userId, systemPrompt = "", model = "gpt-4o" } = await req.json();
+    const {
+      messages,
+      message,
+      chatId,
+      userId,
+      systemPrompt = "",
+      model = "gpt-4o",
+    } = await req.json();
 
     // Handle both message (string) and messages (array) formats
-    const messageArray = messages || (message ? [{ role: "user", content: message }] : null);
+    const messageArray =
+      messages || (message ? [{ role: "user", content: message }] : null);
 
     // Validate required fields
     if (!messageArray || !chatId || !userId) {
@@ -24,7 +32,10 @@ export async function POST(req: NextRequest) {
     });
 
     // Prepare messages for the API
-    const apiMessages = [{ role: "system", content: systemPrompt }, ...messageArray];
+    const apiMessages = [
+      { role: "system", content: systemPrompt },
+      ...messageArray,
+    ];
 
     // Create a stream
     const stream = new TransformStream();
