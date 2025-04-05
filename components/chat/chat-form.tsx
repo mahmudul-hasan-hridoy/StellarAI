@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { ArrowUp, Loader2, Wand2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 import { FileAttachment } from "@/components/file-attachment";
 import type { StoredFile } from "@/lib/types";
 
@@ -107,7 +108,12 @@ export function ChatForm({
 
   return (
     <form onSubmit={handleSendMessage} className="w-full max-w-full">
-      <div className="relative rounded-lg sm:rounded-xl overflow-hidden border border-gray-700">
+      <motion.div 
+        className="relative rounded-lg sm:rounded-xl overflow-hidden border border-gray-700"
+        initial={{ y: 10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        whileHover={{ boxShadow: "0 0 0 1px rgba(255, 255, 255, 0.1)" }}
         {attachedFiles.length > 0 && (
           <div className="px-2 sm:px-4 pt-2 sm:pt-3 flex flex-wrap gap-1 sm:gap-2">
             {attachedFiles.map((file) => (
@@ -184,7 +190,7 @@ export function ChatForm({
                 </div>
               )}
             </div>
-            <button
+            <motion.button
               type="submit"
               disabled={
                 (!inputValue.trim() && attachedFiles.length === 0) || isLoading
@@ -197,6 +203,8 @@ export function ChatForm({
               )}
               aria-label={isLoading ? "Sending message..." : "Send message"}
               title={isLoading ? "Sending..." : "Send message"}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
               {isLoading ? (
                 <span className="flex items-center justify-center h-4 w-4 sm:h-[18px] sm:w-[18px]" aria-hidden="true">
@@ -208,7 +216,7 @@ export function ChatForm({
             </button>
           </div>
         </div>
-      </div>
+      </motion.div>
     </form>
   );
 }

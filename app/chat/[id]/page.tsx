@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useChat } from "@/contexts/chat-context";
 import { getChat } from "@/lib/chat-service";
 import { Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { useToast } from "@/hooks/use-toast";
 import ChatMessage from "@/components/chat/chat-message";
@@ -242,16 +243,29 @@ export default function ChatPage({ params }: { params: { id: string } }) {
   return (
     <div className="flex flex-col w-full md:h-[100dvh] h-[calc(100dvh-60px)] overflow-hidden">
       {/* Chat messages area - Scrollable container */}
-      <div 
+      <motion.div 
         className="flex-1 w-full max-w-full overflow-y-auto p-2 pb-4 sm:p-4 sm:pb-6 space-y-4 sm:space-y-6"
         role="log"
         aria-label="Chat conversation"
         aria-live="polite"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
       >
         {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
+          <motion.div 
+            className="flex items-center justify-center h-full"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            >
+              <Loader2 className="h-6 w-6 text-muted-foreground" />
+            </motion.div>
+          </motion.div>
         ) : messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center space-y-4">
@@ -269,25 +283,46 @@ export default function ChatPage({ params }: { params: { id: string } }) {
 
             {/* Streaming message */}
             {streamingMessage && (
-              <div className="flex items-start gap-2 sm:gap-4" role="status" aria-label="Assistant is typing">
-                <div className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-md border text-sm bg-muted text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                </div>
+              <motion.div 
+                className="flex items-start gap-2 sm:gap-4" 
+                role="status" 
+                aria-label="Assistant is typing"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <motion.div 
+                  className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-md border text-sm bg-muted text-muted-foreground"
+                  animate={{ scale: [1, 1.05, 1] }}
+                  transition={{ duration: 1, repeat: Infinity }}
+                >
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                  >
+                    <Loader2 className="h-4 w-4" aria-hidden="true" />
+                  </motion.div>
+                </motion.div>
                 <div className="flex-1 max-w-full w-full space-y-2 w-full sm:max-w-[85%] md:max-w-[90%]">
                   <div className="prose prose-invert max-w-full w-full p-2 sm:p-3 rounded-lg bg-muted border border-primary/20 shadow-sm">
                     {streamingMessage}
                   </div>
                   <div className="text-xs text-muted-foreground animate-pulse">Assistant is typing...</div>
                 </div>
-              </div>
+              </motion.div>
             )}
           </>
         )}
         <div ref={messagesEndRef} className="h-4" />
-      </div>
+      </motion.div>
 
       {/* Chat input area - Fixed at bottom */}
-      <div className="sticky bottom-0 left-0 right-0 border-t border-border/30 w-full bg-background bg-opacity-90 backdrop-blur-md z-20 shadow-md">
+      <motion.div 
+        className="sticky bottom-0 left-0 right-0 border-t border-border/30 w-full bg-background bg-opacity-90 backdrop-blur-md z-20 shadow-md"
+        initial={{ y: 50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.3, duration: 0.5 }}
+      >
         <div className="px-2 py-2 sm:px-4 sm:py-3 mx-auto max-w-screen-lg">
           <ChatForm
             onSendMessage={async (message, attachments) => {
@@ -430,7 +465,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
             placeholder="How can I help you today?"
           />
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
