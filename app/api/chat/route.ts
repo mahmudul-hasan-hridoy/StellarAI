@@ -111,13 +111,20 @@ export async function POST(req: NextRequest) {
 
     // Create a transform stream to capture the full response
     let fullContent = "";
+    let buffer = ""; // Buffer for incomplete JSON
     const transformStream = new TransformStream({
       async transform(chunk, controller) {
         // Parse the chunk and extract the content
         const text = new TextDecoder().decode(chunk);
-        const lines = text.split("\n").filter((line) => line.trim() !== "");
-
-        for (const line of lines) {
+        // Add to existing buffer
+        buffer += text;
+        
+        // Process complete lines
+        const lines = buffer.split("\n");
+        // Keep the last line if it's incomplete
+        buffer = lines.pop() || "";
+        
+        for (const line of lines.filter(line => line.trim() !== "")) {
           if (line.startsWith("data: ")) {
             const data = line.slice(6);
 
@@ -134,12 +141,30 @@ export async function POST(req: NextRequest) {
                 controller.enqueue(`data: ${JSON.stringify({ content })}\n\n`);
               }
             } catch (e) {
-              console.error("Error parsing chunk:", e);
+              console.error("Error parsing chunk, skipping incomplete JSON:", e.message);
             }
           }
         }
       },
       async flush(controller) {
+        // Process any remaining buffer
+        if (buffer.trim() !== "") {
+          if (buffer.startsWith("data: ")) {
+            const data = buffer.slice(6);
+            if (data !== "[DONE]") {
+              try {
+                const parsed = JSON.parse(data);
+                const content = parsed.choices?.[0]?.delta?.content || "";
+                if (content) {
+                  fullContent += content;
+                }
+              } catch (e) {
+                console.error("Error parsing final chunk:", e.message);
+              }
+            }
+          }
+        }
+        
         // Send [DONE] marker
         controller.enqueue("data: [DONE]\n\n");
 
