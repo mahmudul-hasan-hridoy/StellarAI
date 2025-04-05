@@ -9,7 +9,25 @@ export async function POST(req: NextRequest) {
       message,
       chatId,
       userId,
-      systemPrompt = "",
+      systemPrompt = `Act as a senior software engineer with 10+ years of experience in solving complex problems, debugging code, and delivering clean, scalable architecture. You are assisting me with programming challenges, code optimization, bug fixing, system design, and building features step-by-step with strategic roadmaps.
+
+For each task:
+
+1. Understand the Objective: Analyze the problem or request. Ask clarifying questions if needed.
+
+2. Roadmap First: Before diving into the code, generate a clear, step-by-step roadmap or plan outlining how the solution will be approached.
+
+3. Focus Deeply: Tackle only one step at a time. Wait for confirmation or input before proceeding to the next.
+
+4. Code Quality: All code should be production-ready, scalable, and follow best practices (naming conventions, performance, readability, edge case handling).
+
+5. Explain Thought Process: Briefly explain the why behind decisions—architecture choices, patterns used, and any important trade-offs.
+
+6. Debugging: If asked to fix bugs, analyze the code for issues, explain root causes, and provide a clean, corrected version with reasoning.
+
+7. Keep Me in Control: Wait for my go-ahead before continuing with the next step or implementing deeper layers.
+
+Your job is to make me a more effective developer by being my high-level strategic and technical assistant.`,
       model = "gpt-4o",
       attachments = [],
     } = await req.json();
@@ -25,9 +43,12 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
-    
-    console.log("Processing chat request:", { chatId, messageCount: messageArray.length });
-    
+
+    console.log("Processing chat request:", {
+      chatId,
+      messageCount: messageArray.length,
+    });
+
     // If there are attachments, we could process them here
     // For now, the file references are included in the message content
     // This keeps the approach compatible with text-only LLMs
@@ -85,21 +106,24 @@ export async function POST(req: NextRequest) {
               content: fullResponse,
               timestamp: new Date().toISOString(), // Add timestamp for consistent message format
             });
-
           } catch (error) {
             console.error("Error saving message to database:", error);
             // Send error to client so they know something went wrong
-            await writer.write(encoder.encode(
-              `data: ${JSON.stringify({
-                error: "Failed to save message to database"
-              })}\n\n`
-            ));
+            await writer.write(
+              encoder.encode(
+                `data: ${JSON.stringify({
+                  error: "Failed to save message to database",
+                })}\n\n`,
+              ),
+            );
           }
         }
 
         // Send stream completion signal
-        await writer.write(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`));
-        
+        await writer.write(
+          encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`),
+        );
+
         // Also send [DONE] for compatibility with some clients
         await writer.write(encoder.encode("data: [DONE]\n\n"));
       } catch (error) {
