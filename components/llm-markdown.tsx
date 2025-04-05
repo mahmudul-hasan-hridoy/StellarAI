@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Check, Copy, ExternalLink, ArrowLeft, Circle } from "lucide-react";
+import { Check, Copy, ExternalLink, ArrowLeft, Circle, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import katex from "katex";
 import "katex/dist/katex.min.css";
@@ -53,23 +53,27 @@ interface MermaidProps {
 
 const MermaidDiagram: FC<MermaidProps> = ({ content }) => {
   const [diagram, setDiagram] = useState<string | boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
     // Initialize mermaid
-    mermaid.initialize({ startOnLoad: false, theme: "dark" });
+    mermaid.initialize({ 
+      startOnLoad: false, 
+      theme: "dark",
+      securityLevel: 'loose',
+      fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+    });
     
     const render = async () => {
       try {
         const id = `mermaid-svg-${Math.round(Math.random() * 10000000)}`;
-        if (await mermaid.parse(content, { suppressErrors: true })) {
-          const { svg } = await mermaid.render(id, content);
-          setDiagram(svg);
-        } else {
-          setDiagram(false);
-        }
+        const { svg } = await mermaid.render(id, content);
+        setDiagram(svg);
+        setError(null);
       } catch (error) {
         console.error("Mermaid rendering error:", error);
         setDiagram(false);
+        setError(error instanceof Error ? error.message : String(error));
       }
     };
     render();
@@ -77,8 +81,8 @@ const MermaidDiagram: FC<MermaidProps> = ({ content }) => {
 
   if (diagram === true) {
     return (
-      <div className="flex gap-2 items-center">
-        <Circle className="animate-spin w-4 h-4" />
+      <div className="flex gap-2 items-center justify-center p-4 w-full">
+        <Circle className="animate-spin w-4 h-4 text-primary" />
         <p className="text-sm">Rendering diagram...</p>
       </div>
     );
@@ -86,21 +90,29 @@ const MermaidDiagram: FC<MermaidProps> = ({ content }) => {
 
   if (diagram === false) {
     return (
-      <p className="text-sm text-muted-foreground">
-        Unable to render this diagram. Try copying it into the{" "}
-        <Link
-          href="https://mermaid.live/edit"
-          className={ANCHOR_CLASS_NAME}
-          target="_blank"
-        >
-          Mermaid Live Editor
-        </Link>
-        .
-      </p>
+      <div className="border border-red-500/20 bg-red-500/10 rounded-md p-4 my-4">
+        <p className="text-sm text-red-400 mb-2 font-medium">Error rendering diagram</p>
+        {error && <pre className="text-xs overflow-auto p-2 bg-muted/20 rounded">{error}</pre>}
+        <p className="text-sm text-muted-foreground mt-2">
+          Try copying it into the{" "}
+          <Link
+            href="https://mermaid.live/edit"
+            className={ANCHOR_CLASS_NAME}
+            target="_blank"
+          >
+            Mermaid Live Editor
+          </Link>
+          .
+        </p>
+      </div>
     );
   }
 
-  return <div dangerouslySetInnerHTML={{ __html: diagram }} />;
+  return (
+    <div className="my-4 w-full overflow-auto p-1">
+      <div className="mx-auto" dangerouslySetInnerHTML={{ __html: diagram }} />
+    </div>
+  );
 };
 
 // Enhanced Code Block with Copy Button
@@ -115,7 +127,7 @@ const EnhancedCodeBlock: FC<EnhancedCodeBlockProps> = ({ language, code, classNa
   const [showMermaidPreview, setShowMermaidPreview] = useState(false);
   const ref = useRef<HTMLElement>(null);
   
-  const isMermaid = language === "mermaid";
+  const isMermaid = language.toLowerCase() === "mermaid";
 
   // Highlight code on mount and update
   useEffect(() => {
@@ -138,23 +150,35 @@ const EnhancedCodeBlock: FC<EnhancedCodeBlockProps> = ({ language, code, classNa
 
   return (
     <div className="relative my-4 group">
-      <div className="overflow-auto rounded-md bg-muted">
-        <div className="flex items-center justify-between px-4 py-2 border-b bg-muted">
-          <div className="text-xs text-muted-foreground">
-            {language}
+      <div className="overflow-auto rounded-md bg-muted/80 border border-muted-foreground/20">
+        <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/90">
+          <div className="text-xs text-muted-foreground flex items-center">
+            {isMermaid ? (
+              <span className="flex items-center gap-1">
+                <svg viewBox="0 0 24 24" width="16" height="16" className="text-primary">
+                  <path fill="currentColor" d="M12 12.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm-1.5 3.5a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0Z" />
+                  <path fill="currentColor" d="M12 4a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17ZM2 12.5C2 7.25 6.25 3 11.5 3S21 7.25 21 12.5c0 .54-.04 1.06-.13 1.58l.68.13a.5.5 0 0 1 .4.48v1.6a.5.5 0 0 1-.4.49l-.75.14c-.17.33-.37.65-.58.95l.34.67c.1.2.06.44-.1.6l-1.13 1.12a.5.5 0 0 1-.6.1l-.67-.33a7.4 7.4 0 0 1-.95.57l-.15.76a.5.5 0 0 1-.48.39h-1.6a.5.5 0 0 1-.48-.39l-.15-.76a7.65 7.65 0 0 1-.95-.57l-.67.33a.5.5 0 0 1-.6-.09l-1.13-1.13a.5.5 0 0 1-.09-.6l.33-.67a7.65 7.65 0 0 1-.57-.95l-.76-.15A.5.5 0 0 1 2 16.3v-1.6a.5.5 0 0 1 .39-.48l.76-.15c.17-.33.37-.65.57-.95l-.33-.67a.5.5 0 0 1 .09-.6L4.6 10.7a.5.5 0 0 1 .6-.1l.67.34c.3-.21.62-.4.95-.58l.15-.75A.5.5 0 0 1 7.45 9h1.6c.21 0 .4.14.48.39l.15.75c.33.18.64.37.95.58l.67-.34a.5.5 0 0 1 .6.1l1.13 1.13c.16.16.2.4.1.6l-.34.67c.21.3.4.62.58.95l.75.15a.5.5 0 0 1 .39.48v1.6a.5.5 0 0 1-.39.48l-.75.15a7.12 7.12 0 0 1-.58.95l.34.67c.1.2.06.44-.1.6l-1.13 1.13a.5.5 0 0 1-.6.09l-.67-.33a7.65 7.65 0 0 1-.95.57l-.15.76a.5.5 0 0 1-.48.39h-1.6a.5.5 0 0 1-.48-.39l-.15-.76a7.4 7.4 0 0 1-.95-.57l-.67.33a.5.5 0 0 1-.6-.09L5.84 17.7a.5.5 0 0 1-.1-.6l.33-.67a7.65 7.65 0 0 1-.57-.95l-.76-.15A.5.5 0 0 1 4.36 15v-1.09A8.46 8.46 0 0 1 2 8.5Z" />
+                </svg>
+                <span className="ml-1">mermaid</span>
+              </span>
+            ) : (
+              <span>{language}</span>
+            )}
           </div>
           <div className="flex gap-1">
             <button
               onClick={copyToClipboard}
               className="h-7 w-7 rounded-md p-1 text-muted-foreground hover:bg-muted-foreground/20 transition-colors"
+              aria-label="Copy code"
             >
-              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
             </button>
             {isMermaid && (
               <>
                 <button
                   onClick={() => setShowMermaidPreview(true)}
                   className="h-7 w-7 rounded-md p-1 text-muted-foreground hover:bg-muted-foreground/20 transition-colors"
+                  aria-label="Preview diagram"
                 >
                   <ExternalLink className="h-4 w-4" />
                 </button>
@@ -162,11 +186,13 @@ const EnhancedCodeBlock: FC<EnhancedCodeBlockProps> = ({ language, code, classNa
                   open={showMermaidPreview}
                   onOpenChange={setShowMermaidPreview}
                 >
-                  <DialogContent>
+                  <DialogContent className="max-w-3xl">
                     <DialogHeader>
                       <DialogTitle>Mermaid Diagram Preview</DialogTitle>
                     </DialogHeader>
-                    <MermaidDiagram content={code} />
+                    <div className="max-h-[70vh] overflow-auto p-2">
+                      <MermaidDiagram content={code} />
+                    </div>
                   </DialogContent>
                 </Dialog>
               </>
@@ -186,6 +212,86 @@ const EnhancedCodeBlock: FC<EnhancedCodeBlockProps> = ({ language, code, classNa
           </pre>
         )}
       </div>
+      {isMermaid && (
+        <div className="mt-2">
+          <MermaidDiagram content={code} />
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Table component
+interface TableProps {
+  header: string[];
+  rows: string[][];
+}
+
+const Table: FC<TableProps> = ({ header, rows }) => {
+  return (
+    <div className="my-4 w-full overflow-x-auto">
+      <table className="w-full border-collapse">
+        <thead>
+          <tr className="bg-muted/50 border-b border-muted-foreground/20">
+            {header.map((cell, i) => (
+              <th 
+                key={i} 
+                className="py-2 px-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
+              >
+                {parseInlineElements(cell)}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr 
+              key={i} 
+              className={cn(
+                "border-b border-muted-foreground/10",
+                i % 2 === 0 ? "bg-transparent" : "bg-muted/20"
+              )}
+            >
+              {row.map((cell, j) => (
+                <td key={j} className="py-2 px-4 text-sm">
+                  {parseInlineElements(cell)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+// Collapsible details component
+interface DetailsProps {
+  summary: string;
+  children: React.ReactNode;
+}
+
+const Details: FC<DetailsProps> = ({ summary, children }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  return (
+    <div className="my-4 border border-muted-foreground/20 rounded-md overflow-hidden">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between p-3 text-left bg-muted/30 hover:bg-muted/50 transition-colors"
+      >
+        <span className="font-medium">{parseInlineElements(summary)}</span>
+        {isOpen ? (
+          <ChevronUp className="h-4 w-4 text-muted-foreground" />
+        ) : (
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+        )}
+      </button>
+      {isOpen && (
+        <div className="p-4 border-t border-muted-foreground/20">
+          {children}
+        </div>
+      )}
     </div>
   );
 };
@@ -207,6 +313,12 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(({ content, className }) =
   let blockQuoteContent: string[] = [];
   let inMath = false;
   let mathContent: string[] = [];
+  let inTable = false;
+  let tableRows: string[][] = [];
+  let tableHeader: string[] = [];
+  let inDetails = false;
+  let detailsSummary: string = '';
+  let detailsContent: string[] = [];
 
   const flushParagraph = () => {
     if (currentParagraph.length > 0) {
@@ -300,6 +412,48 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(({ content, className }) =
     }
   };
 
+  const flushTable = () => {
+    if (tableHeader.length > 0 && tableRows.length > 0) {
+      elements.push(
+        <Table 
+          key={`table-${elements.length}`}
+          header={tableHeader} 
+          rows={tableRows} 
+        />
+      );
+      tableHeader = [];
+      tableRows = [];
+      inTable = false;
+    }
+  };
+  
+  const flushDetails = () => {
+    if (inDetails && detailsSummary && detailsContent.length > 0) {
+      const parsedContent = parseMarkdownContent(detailsContent.join('\n'));
+      
+      elements.push(
+        <Details
+          key={`details-${elements.length}`}
+          summary={detailsSummary}
+        >
+          {parsedContent}
+        </Details>
+      );
+      
+      detailsSummary = '';
+      detailsContent = [];
+      inDetails = false;
+    }
+  };
+
+  // Helper function to parse table rows
+  const parseTableRow = (line: string): string[] => {
+    return line
+      .replace(/^\||\|$/g, '') // Remove leading/trailing pipes
+      .split('|')
+      .map(cell => cell.trim());
+  };
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     
@@ -311,6 +465,8 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(({ content, className }) =
         flushParagraph();
         flushList();
         flushBlockQuote();
+        flushTable();
+        flushDetails();
         inMath = true;
       }
       continue;
@@ -329,6 +485,8 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(({ content, className }) =
         flushParagraph();
         flushList();
         flushBlockQuote();
+        flushTable();
+        flushDetails();
         // Extract language from opening code fence
         const language = line.slice(3).trim();
         currentCodeBlock = { language, code: [] };
@@ -341,11 +499,62 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(({ content, className }) =
       continue;
     }
 
+    // Details/summary (collapsible content)
+    if (line.match(/^<details>$/i)) {
+      flushParagraph();
+      flushList();
+      flushBlockQuote();
+      flushTable();
+      inDetails = true;
+      continue;
+    }
+    
+    if (inDetails && line.match(/^<summary>(.*)<\/summary>$/i)) {
+      const match = line.match(/^<summary>(.*)<\/summary>$/i);
+      if (match && match[1]) {
+        detailsSummary = match[1].trim();
+      }
+      continue;
+    }
+    
+    if (line.match(/^<\/details>$/i)) {
+      flushDetails();
+      continue;
+    }
+    
+    if (inDetails) {
+      detailsContent.push(line);
+      continue;
+    }
+
+    // Tables
+    if (line.match(/^\|(.+\|)+$/)) {
+      if (!inTable) {
+        flushParagraph();
+        flushList();
+        flushBlockQuote();
+        inTable = true;
+        tableHeader = parseTableRow(line);
+      } else if (line.match(/^\|(\s*[-:]+\s*\|)+$/)) {
+        // This is the separator line, ignore it
+        continue;
+      } else {
+        tableRows.push(parseTableRow(line));
+      }
+      continue;
+    }
+    
+    if (inTable && !line.match(/^\|(.+\|)+$/)) {
+      flushTable();
+    }
+
     // Headings
     if (line.startsWith('# ')) {
       flushParagraph();
       flushList();
       flushBlockQuote();
+      flushTable();
+      flushDetails();
       elements.push(
         <h1 key={`h1-${elements.length}`} className="text-2xl font-bold mb-4 mt-6 text-foreground">
           {parseInlineElements(line.slice(2))}
@@ -358,6 +567,8 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(({ content, className }) =
       flushParagraph();
       flushList();
       flushBlockQuote();
+      flushTable();
+      flushDetails();
       elements.push(
         <h2 key={`h2-${elements.length}`} className="text-xl font-bold mb-3 mt-5 text-foreground">
           {parseInlineElements(line.slice(3))}
@@ -370,6 +581,8 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(({ content, className }) =
       flushParagraph();
       flushList();
       flushBlockQuote();
+      flushTable();
+      flushDetails();
       elements.push(
         <h3 key={`h3-${elements.length}`} className="text-lg font-semibold mb-3 mt-4 text-foreground">
           {parseInlineElements(line.slice(4))}
@@ -382,6 +595,8 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(({ content, className }) =
       flushParagraph();
       flushList();
       flushBlockQuote();
+      flushTable();
+      flushDetails();
       elements.push(
         <h4 key={`h4-${elements.length}`} className="text-base font-semibold mb-2 mt-3 text-foreground">
           {parseInlineElements(line.slice(5))}
@@ -395,6 +610,8 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(({ content, className }) =
       flushParagraph();
       flushList();
       flushBlockQuote();
+      flushTable();
+      flushDetails();
       elements.push(
         <hr key={`hr-${elements.length}`} className="my-6 border-gray-700" />
       );
@@ -405,6 +622,8 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(({ content, className }) =
     if (line.match(/^\d+\.\s/)) {
       flushParagraph();
       flushBlockQuote();
+      flushTable();
+      flushDetails();
       if (currentListType !== 'ol') {
         flushList();
         currentListType = 'ol';
@@ -416,6 +635,8 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(({ content, className }) =
     if (line.match(/^[\*\-]\s/)) {
       flushParagraph();
       flushBlockQuote();
+      flushTable();
+      flushDetails();
       if (currentListType !== 'ul') {
         flushList();
         currentListType = 'ul';
@@ -428,6 +649,8 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(({ content, className }) =
     if (line.startsWith('> ')) {
       flushParagraph();
       flushList();
+      flushTable();
+      flushDetails();
       inBlockQuote = true;
       blockQuoteContent.push(line.slice(2));
       continue;
@@ -438,6 +661,9 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(({ content, className }) =
       flushParagraph();
       flushList();
       flushBlockQuote();
+      if (inTable && tableHeader.length > 0 && tableRows.length > 0) {
+        flushTable();
+      }
       continue;
     }
 
@@ -454,7 +680,9 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(({ content, className }) =
   flushCodeBlock();
   flushList();
   flushBlockQuote();
+  flushTable();
   flushMath();
+  flushDetails();
 
   return (
     <div className={cn("prose dark:prose-invert prose-sm sm:prose-base max-w-full break-words text-foreground", className)}>
@@ -622,6 +850,16 @@ function parseInlineElements(text: string): React.ReactNode[] {
   }
   
   return segments;
+}
+
+// Recursive markdown parser for nested content
+function parseMarkdownContent(content: string): React.ReactNode {
+  const tempMarkdown = 
+    <LLMMarkdown
+      content={content}
+      className="p-0 m-0"
+    />;
+  return tempMarkdown;
 }
 
 LLMMarkdown.displayName = "LLMMarkdown";
