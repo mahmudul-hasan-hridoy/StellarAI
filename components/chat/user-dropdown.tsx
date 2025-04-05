@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -18,7 +17,7 @@ import { User, Settings, LogOut, HelpCircle } from "lucide-react";
 export default function UserDropdown() {
   const { user, logOut } = useAuth();
   const router = useRouter();
-  
+
   const handleLogout = async () => {
     try {
       await logOut();
@@ -38,9 +37,9 @@ export default function UserDropdown() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="sm" 
+        <Button
+          variant="ghost"
+          size="sm"
           className="w-full justify-between items-center px-3 py-2 mt-2 text-sm text-gray-300 hover:bg-gray-800 rounded-md"
         >
           <div className="flex items-center gap-2 overflow-hidden">
@@ -55,17 +54,22 @@ export default function UserDropdown() {
           <div className="opacity-60">▼</div>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 bg-gray-900 border-gray-800 text-white">
-        <DropdownMenuLabel className="text-gray-400">My Account</DropdownMenuLabel>
+      <DropdownMenuContent
+        align="end"
+        className="w-56 bg-gray-900 border-gray-800 text-white"
+      >
+        <DropdownMenuLabel className="text-gray-400">
+          My Account
+        </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-gray-800" />
-        <DropdownMenuItem 
+        <DropdownMenuItem
           className="flex items-center gap-2 cursor-pointer hover:bg-gray-800"
           onClick={handleSettings}
         >
           <Settings className="h-4 w-4" />
           <span>Settings</span>
         </DropdownMenuItem>
-        <DropdownMenuItem 
+        <DropdownMenuItem
           className="flex items-center gap-2 cursor-pointer hover:bg-gray-800"
           onClick={() => router.push("/about")}
         >
@@ -73,7 +77,7 @@ export default function UserDropdown() {
           <span>Help & Support</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator className="bg-gray-800" />
-        <DropdownMenuItem 
+        <DropdownMenuItem
           className="flex items-center gap-2 text-red-400 cursor-pointer hover:bg-gray-800 hover:text-red-300"
           onClick={handleLogout}
         >
