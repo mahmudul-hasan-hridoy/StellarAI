@@ -5,8 +5,7 @@ import { FileUpload } from "./file-upload";
 import { FileList } from "./file-list";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PaperclipIcon, FileIcon, X } from "lucide-react";
-import { truncateFilename } from "@/lib/utils";
+import { PaperclipIcon} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -42,41 +41,10 @@ export function FileAttachment({
     setDialogOpen(false);
   };
 
-  const handleRemoveFile = (fileId: string) => {
-    if (onRemove) {
-      onRemove(fileId);
-    }
-  };
-
   const isAtMaxFiles = attachedFiles.length >= maxFiles;
 
   return (
     <div className="w-full">
-      {/* Attached files display */}
-      {attachedFiles.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-2">
-          {attachedFiles.map((file) => (
-            <div
-              key={file.id}
-              className="flex items-center gap-1 text-xs bg-secondary/50 rounded-full pl-2 pr-1 py-1"
-            >
-              <FileIcon className="h-3 w-3" />
-              <span className="truncate max-w-[120px]" title={file.fileName}>
-                {truncateFilename(file.fileName, 6, 16)}
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-4 w-4 rounded-full"
-                onClick={() => handleRemoveFile(file.id)}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* Attachment button & Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogTrigger asChild>
