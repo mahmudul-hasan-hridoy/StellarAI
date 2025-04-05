@@ -7,7 +7,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { useChat } from "@/contexts/chat-context";
 import { getChat } from "@/lib/chat-service";
-import { Loader2 } from "lucide-react";
+import { Loader2, Bot } from "lucide-react";
+import { LLMMarkdown } from "@/components/llm-markdown";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { useToast } from "@/hooks/use-toast";
@@ -281,7 +282,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
               <ChatMessage key={message.id || index} message={message} />
             ))}
 
-            {/* Streaming message */}
+            {/* Streaming message with LLMMarkdown */}
             {streamingMessage && (
               <motion.div 
                 className="flex items-start gap-2 sm:gap-4" 
@@ -292,7 +293,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
                 transition={{ duration: 0.3 }}
               >
                 <motion.div 
-                  className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-md border text-sm bg-muted text-muted-foreground"
+                  className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 select-none items-center justify-center rounded-md border text-xs sm:text-sm bg-muted text-muted-foreground"
                   animate={{ scale: [1, 1.05, 1] }}
                   transition={{ duration: 1, repeat: Infinity }}
                 >
@@ -300,12 +301,12 @@ export default function ChatPage({ params }: { params: { id: string } }) {
                     animate={{ rotate: 360 }}
                     transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
                   >
-                    <Loader2 className="h-4 w-4" aria-hidden="true" />
+                    <Bot className="h-3 w-3 sm:h-4 sm:w-4" aria-hidden="true" />
                   </motion.div>
                 </motion.div>
-                <div className="flex-1 max-w-full w-full space-y-2 w-full sm:max-w-[85%] md:max-w-[90%]">
-                  <div className="prose prose-invert max-w-full w-full p-2 sm:p-3 rounded-lg bg-muted border border-primary/20 shadow-sm">
-                    {streamingMessage}
+                <div className="flex-1 space-y-2 sm:space-y-3 max-w-[97%] sm:max-w-[85%] md:max-w-[90%]">
+                  <div className="rounded-lg">
+                    <LLMMarkdown content={streamingMessage} />
                   </div>
                   <div className="text-xs text-muted-foreground animate-pulse">Assistant is typing...</div>
                 </div>

@@ -85,7 +85,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                       transition={{ duration: 0.3, delay: index * 0.1 }}
                       className="w-full sm:max-w-[300px]"
                     >
-                      <FileAttachmentDisplay fileId={fileId} />
+                      <FileAttachmentDisplay fileId={fileId} compact={true} />
                     </motion.div>
                   );
                 })}
