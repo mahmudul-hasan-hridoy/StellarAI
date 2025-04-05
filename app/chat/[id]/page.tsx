@@ -12,7 +12,7 @@ import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ChatMessage from "@/components/chat/chat-message";
 import { ChatForm } from "@/components/chat/chat-form";
-import { cn } from "@/lib/utils";
+import { addMessage } from "@/lib/chat-service";
 
 // Added attachments property to Message type. Adjust as needed.
 type Message = {
