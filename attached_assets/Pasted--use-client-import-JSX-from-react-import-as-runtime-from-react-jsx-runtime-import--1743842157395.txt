@@ -1,0 +1,419 @@
+"use client";
+import { JSX } from "react";
+import * as runtime from "react/jsx-runtime";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { CircleIcon, CheckIcon, CopyIcon, ArrowLeftIcon } from "lucide-react";
+import { type Root } from "hast";
+import Link from "next/link";
+import {
+  Children,
+  Fragment,
+  createElement,
+  isValidElement,
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+  type ReactNode,
+  type FC,
+} from "react";
+import flattenChildren from "react-keyed-flatten-children";
+import rehypeReact from "rehype-react";
+import remarkGfm from "remark-gfm";
+import remarkParse from "remark-parse";
+import remarkRehype from "remark-rehype";
+import { type Plugin, unified } from "unified";
+import { visit } from "unist-util-visit";
+import mermaid from "mermaid";
+import { cn } from "@/lib/utils";
+import hljs from "highlight.js"; // Import highlight.js
+import "highlight.js/styles/github-dark.css"; // Use a dark theme for syntax highlighting
+
+// Initialize highlight.js
+hljs.configure({
+  languages: [
+    "javascript",
+    "typescript",
+    "html",
+    "css",
+    "bash",
+    "json",
+    "python",
+    "java",
+    "ruby",
+    "php",
+    "c",
+    "cpp",
+    "go",
+    "rust",
+  ],
+});
+
+// Constants
+export const ANCHOR_CLASS_NAME =
+  "font-semibold underline text-[#ffffff] underline-offset-[2px] decoration-1 hover:text-[#cccccc] transition-colors";
+
+// Types
+interface BaseProps {
+  children?: ReactNode;
+  className?: string;
+  id?: string;
+}
+
+interface CodeBlockProps extends BaseProps {
+  className?: string;
+}
+
+interface MermaidProps {
+  content: string;
+}
+
+// Plugin definition
+const rehypeListItemParagraphToDiv: Plugin<[], Root> = () => {
+  return (tree: Root) => {
+    visit(tree, "element", (element) => {
+      if (element.tagName === "li") {
+        element.children = element.children.map((child) => {
+          if (child.type === "element" && child.tagName === "p") {
+            // Change the tagName from 'p' to 'div'
+            child.tagName = "div";
+          }
+          return child;
+        });
+      }
+    });
+    return tree;
+  };
+};
+
+export const useMarkdownProcessor = (content: string) => {
+  useEffect(() => {
+    mermaid.initialize({ startOnLoad: false, theme: "dark" });
+  }, []);
+
+  return useMemo(() => {
+    return unified()
+      .use(remarkParse)
+      .use(remarkGfm)
+      .use(remarkRehype)
+      .use(rehypeListItemParagraphToDiv)
+      .use(rehypeReact, {
+        createElement,
+        Fragment,
+        jsx: runtime.jsx,
+        jsxs: runtime.jsxs,
+        components: {
+          a: ({ href, children }: JSX.IntrinsicElements["a"]) => (
+            <a
+              href={href}
+              target="_blank"
+              rel="noreferrer"
+              className={ANCHOR_CLASS_NAME}
+            >
+              {children}
+            </a>
+          ),
+          h1: ({ children, id }: JSX.IntrinsicElements["h1"]) => (
+            <h1
+              className="font-sans font-semibold text-2xl text-[#ffffff] mb-6 mt-6"
+              id={id}
+            >
+              {children}
+            </h1>
+          ),
+          h2: ({ children, id }: JSX.IntrinsicElements["h2"]) => (
+            <h2
+              className="font-sans font-medium text-2xl text-[#ffffff] mb-6 mt-6"
+              id={id}
+            >
+              {children}
+            </h2>
+          ),
+          h3: ({ children, id }: JSX.IntrinsicElements["h3"]) => (
+            <h3
+              className="font-sans font-semibold text-xl text-[#ffffff] mb-6 mt-2"
+              id={id}
+            >
+              {children}
+            </h3>
+          ),
+          h4: ({ children, id }: JSX.IntrinsicElements["h4"]) => (
+            <h4
+              className="font-sans font-medium text-xl text-[#ffffff] my-6"
+              id={id}
+            >
+              {children}
+            </h4>
+          ),
+          h5: ({ children, id }: JSX.IntrinsicElements["h5"]) => (
+            <h5
+              className="font-sans font-semibold text-lg text-[#ffffff] my-6"
+              id={id}
+            >
+              {children}
+            </h5>
+          ),
+          h6: ({ children, id }: JSX.IntrinsicElements["h6"]) => (
+            <h6
+              className="font-sans font-medium text-lg text-[#ffffff] my-6"
+              id={id}
+            >
+              {children}
+            </h6>
+          ),
+          p: (props: JSX.IntrinsicElements["p"]) => {
+            return (
+              <p className="font-sans text-sm text-[#cccccc] mb-6">
+                {props.children}
+              </p>
+            );
+          },
+          strong: ({ children }: JSX.IntrinsicElements["strong"]) => (
+            <strong className="text-[#ffffff] font-semibold">{children}</strong>
+          ),
+          em: ({ children }: JSX.IntrinsicElements["em"]) => (
+            <em>{children}</em>
+          ),
+          code: CodeBlock,
+          pre: ({ children }: JSX.IntrinsicElements["pre"]) => {
+            return (
+              <div className="relative my-4">
+                <pre className="font-code text-sm overflow-x-auto flex items-start rounded-md max-w-full bg-[#1a1a1a] p-4">
+                  {children}
+                </pre>
+              </div>
+            );
+          },
+          ul: ({ children }: JSX.IntrinsicElements["ul"]) => (
+            <ul className="flex flex-col gap-3 text-[#cccccc] my-6 pl-3 [&_ol]:my-3 [&_ul]:my-3">
+              {Children.map(
+                flattenChildren(children).filter(isValidElement),
+                (child, index) => (
+                  <li key={index} className="flex gap-2 items-start">
+                    <div className="w-1 h-1 rounded-full bg-[#cccccc] block shrink-0 mt-1" />
+                    {child}
+                  </li>
+                ),
+              )}
+            </ul>
+          ),
+          ol: ({ children }: JSX.IntrinsicElements["ol"]) => (
+            <ol className="flex flex-col gap-3 text-[#cccccc] my-6 pl-3 [&_ol]:my-3 [&_ul]:my-3">
+              {Children.map(
+                flattenChildren(children).filter(isValidElement),
+                (child, index) => (
+                  <li key={index} className="flex gap-2 items-start">
+                    <div
+                      className="font-sans text-sm text-[#cccccc] font-semibold shrink-0 min-w-[1.4ch]"
+                      aria-hidden
+                    >
+                      {index + 1}.
+                    </div>
+                    {child}
+                  </li>
+                ),
+              )}
+            </ol>
+          ),
+          li: ({ children }: JSX.IntrinsicElements["li"]) => (
+            <div className="font-sans text-sm">{children}</div>
+          ),
+          table: ({ children }: JSX.IntrinsicElements["table"]) => (
+            <div className="overflow-x-auto mb-6">
+              <table className="table-auto border-2 border-[#1a1a1a]">
+                {children}
+              </table>
+            </div>
+          ),
+          thead: ({ children }: JSX.IntrinsicElements["thead"]) => (
+            <thead className="bg-[#1a1a1a]">{children}</thead>
+          ),
+          th: ({ children }: JSX.IntrinsicElements["th"]) => (
+            <th className="border-2 border-[#1a1a1a] p-2 font-sans text-sm font-semibold text-[#ffffff]">
+              {children}
+            </th>
+          ),
+          td: ({ children }: JSX.IntrinsicElements["td"]) => (
+            <td className="border-2 border-[#1a1a1a] p-2 font-sans text-sm text-[#cccccc]">
+              {children}
+            </td>
+          ),
+          blockquote: ({ children }: JSX.IntrinsicElements["blockquote"]) => (
+            <blockquote className="border-l-4 border-[#1a1a1a] pl-2 text-[#cccccc] italic">
+              {children}
+            </blockquote>
+          ),
+          img: ({ src, alt, title }: JSX.IntrinsicElements["img"]) => (
+            <img
+              src={src}
+              alt={alt || ""}
+              title={title}
+              className="max-w-full h-auto rounded-lg"
+            />
+          ),
+          hr: () => <hr className="border-t-2 border-[#1a1a1a] my-8" />,
+          del: ({ children }: JSX.IntrinsicElements["del"]) => (
+            <del className="line-through">{children}</del>
+          ),
+          sup: ({ children }: JSX.IntrinsicElements["sup"]) => (
+            <sup className="text-xs">{children}</sup>
+          ),
+          sub: ({ children }: JSX.IntrinsicElements["sub"]) => (
+            <sub className="text-xs">{children}</sub>
+          ),
+        } as const,
+      } as any)
+      .processSync(content).result;
+  }, [content]);
+};
+
+const CodeBlock: FC<CodeBlockProps> = ({ children, className }) => {
+  const [copied, setCopied] = useState(false);
+  const [showMermaidPreview, setShowMermaidPreview] = useState(false);
+  const ref = useRef<HTMLElement>(null);
+
+  // Highlight code on mount and update
+  useEffect(() => {
+    if (ref.current) {
+      hljs.highlightBlock(ref.current);
+    }
+  }, [children]);
+
+  useEffect(() => {
+    if (copied) {
+      const interval = setTimeout(() => setCopied(false), 1000);
+      return () => clearTimeout(interval);
+    }
+  }, [copied]);
+
+  if (className) {
+    const isMermaid = className.includes("language-mermaid");
+
+    return (
+      <div className="relative w-full">
+        <code
+          ref={ref}
+          className={cn(
+            className,
+            "flex-grow flex-shrink my-auto w-full overflow-x-auto bg-[#1a1a1a] p-4 rounded-md",
+          )}
+        >
+          {children}
+        </code>
+        <div className="absolute right-1 top-1 flex flex-col gap-1 flex-grow-0 flex-shrink-0">
+          <button
+            type="button"
+            className="rounded-md p-1 text-[#ffffff] hover:bg-[#1a1a1a] border-2 border-[#1a1a1a] transition-colors"
+            aria-label="copy code to clipboard"
+            title="Copy code to clipboard"
+            onClick={() => {
+              if (ref.current) {
+                navigator.clipboard.writeText(ref.current.innerText ?? "");
+                setCopied(true);
+              }
+            }}
+          >
+            {copied ? (
+              <CheckIcon className="w-4 h-4" />
+            ) : (
+              <CopyIcon className="w-4 h-4" />
+            )}
+          </button>
+          {isMermaid && (
+            <>
+              <button
+                type="button"
+                className="rounded-md p-1 text-[#ffffff] hover:bg-[#1a1a1a] border-2 border-[#1a1a1a] transition-colors"
+                aria-label="Open Mermaid preview"
+                title="Open Mermaid preview"
+                onClick={() => setShowMermaidPreview(true)}
+              >
+                <ArrowLeftIcon className="w-4 h-4" />
+              </button>
+              <Dialog
+                open={showMermaidPreview}
+                onOpenChange={setShowMermaidPreview}
+              >
+                <DialogContent className="bg-[#000000] text-[#ffffff]">
+                  <DialogHeader>
+                    <DialogTitle>Mermaid diagram preview</DialogTitle>
+                  </DialogHeader>
+                  <Mermaid content={children?.toString() ?? ""} />
+                </DialogContent>
+              </Dialog>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <code className="inline-block font-code bg-[#1a1a1a] text-[#ffffff] p-0.5 -my-0.5 rounded">
+      {children}
+    </code>
+  );
+};
+
+const Mermaid: FC<MermaidProps> = ({ content }) => {
+  const [diagram, setDiagram] = useState<string | boolean>(true);
+
+  useEffect(() => {
+    const render = async () => {
+      try {
+        const id = `mermaid-svg-${Math.round(Math.random() * 10000000)}`;
+        if (await mermaid.parse(content, { suppressErrors: true })) {
+          const { svg } = await mermaid.render(id, content);
+          setDiagram(svg);
+        } else {
+          setDiagram(false);
+        }
+      } catch (error) {
+        console.error("Mermaid rendering error:", error);
+        setDiagram(false);
+      }
+    };
+    render();
+  }, [content]);
+
+  if (diagram === true) {
+    return (
+      <div className="flex gap-2 items-center">
+        <CircleIcon className="animate-spin w-4 h-4 text-[#ffffff]" />
+        <p className="font-sans text-sm text-[#cccccc]">Rendering diagram...</p>
+      </div>
+    );
+  }
+
+  if (diagram === false) {
+    return (
+      <p className="font-sans text-sm text-[#cccccc]">
+        Unable to render this diagram. Try copying it into the{" "}
+        <Link
+          href="https://mermaid.live/edit"
+          className={ANCHOR_CLASS_NAME}
+          target="_blank"
+        >
+          Mermaid Live Editor
+        </Link>
+        .
+      </p>
+    );
+  }
+
+  return <div dangerouslySetInnerHTML={{ __html: diagram }} />;
+};
+
+interface LLMMarkdownProps {
+  content: string;
+}
+
+export const LLMMarkdown: FC<LLMMarkdownProps> = ({ content }) => {
+  const processedContent = useMarkdownProcessor(content);
+  return <div className="llm-markdown">{processedContent}</div>;
+};
