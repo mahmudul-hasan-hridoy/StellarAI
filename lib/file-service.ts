@@ -143,13 +143,13 @@ export const getFileById = async (
       console.log(`No file found with id field equal to ${fileId}, trying document ID`);
       try {
         const docRef = doc(db, "files", fileId);
-        const docSnap = await docRef.get();
+        const docSnap = await getDocs(query(collection(db, "files"), where("__name__", "==", fileId)));
         
-        if (docSnap.exists()) {
+        if (!docSnap.empty) {
           console.log(`File found with document ID: ${fileId}`);
           return {
-            id: docSnap.id,
-            ...docSnap.data(),
+            id: docSnap.docs[0].id,
+            ...docSnap.docs[0].data(),
           } as StoredFile;
         }
       } catch (err) {

@@ -115,13 +115,31 @@ Your job is to make me a more effective developer by being my high-level strateg
                   url: `data:${file.fileType};base64,${base64}`
                 }
               });
-            } else {
-              // For non-image files, include as text with base64 data
-              console.log(`Adding non-image attachment: ${file.fileName}`);
+            } else if (file.fileType?.startsWith('application/pdf')) {
+              // Handle PDFs
+              console.log(`Adding PDF attachment: ${file.fileName}`);
               content.push({
                 type: 'text',
-                text: `[File: ${file.fileName} (${file.fileType})]
-                Content (base64): ${base64.substring(0, 100)}...`
+                text: `[PDF Attachment: ${file.fileName}]\n`
+              });
+              content.push({
+                type: 'text',
+                text: `Content encoded in base64 (not shown in full): ${base64.substring(0, 50)}...`
+              });
+            } else if (file.fileType?.startsWith('text/')) {
+              // Handle text files - decode and include the actual content
+              const text = Buffer.from(arrayBuffer).toString('utf-8');
+              console.log(`Adding text attachment: ${file.fileName}`);
+              content.push({
+                type: 'text',
+                text: `[Text File: ${file.fileName}]\n\n\`\`\`\n${text}\n\`\`\``
+              });
+            } else {
+              // For other file types, include as text with base64 data
+              console.log(`Adding attachment: ${file.fileName} (${file.fileType})`);
+              content.push({
+                type: 'text',
+                text: `[File: ${file.fileName} (${file.fileType})]\nFile content is available as base64 but not displayed here for readability.`
               });
             }
           } catch (error) {

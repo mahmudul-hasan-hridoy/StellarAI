@@ -1,36 +1,47 @@
-
 "use client";
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { FileIcon, ExternalLink, Download, Info, Loader2 } from "lucide-react";
-import { FileViewer } from "@/components/file-viewer";
+import React, { useState, useEffect } from "react";
+import {
+  File,
+  FileText,
+  ImageIcon,
+  Music,
+  Video,
+  Table,
+  FileJson,
+  Loader2,
+  AlertCircle,
+  Download,
+  FileArchive,
+  FilePdf,
+  FileCode,
+} from "lucide-react";
+import Image from "next/image";
 import { getFileById } from "@/lib/file-service";
-import { truncateFilename } from "@/lib/utils";
-import { StoredFilePreview } from "@/components/file-preview";
-import type { StoredFile } from "@/lib/types";
+import { formatFileSize } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 
 interface FileAttachmentDisplayProps {
   fileId: string;
 }
 
-export function FileAttachmentDisplay({ fileId }: FileAttachmentDisplayProps) {
-  const [file, setFile] = useState<StoredFile | null>(null);
+export function FileAttachmentDisplay({
+  fileId,
+}: FileAttachmentDisplayProps) {
+  const [file, setFile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [viewerOpen, setViewerOpen] = useState(false);
-  const [isHovering, setIsHovering] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
-  const { toast } = useToast();
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     const loadFile = async () => {
       try {
         setLoading(true);
         setError(null);
-        
+        setImageError(false);
+
         // Ensure fileId is a string before proceeding
         if (typeof fileId !== 'string') {
           console.error(`Invalid file ID type: ${typeof fileId}`);
@@ -38,153 +49,159 @@ export function FileAttachmentDisplay({ fileId }: FileAttachmentDisplayProps) {
           setLoading(false);
           return;
         }
-        
+
         console.log(`Loading file with ID: ${fileId}`);
         const fileData = await getFileById(fileId);
-        
+
         if (!fileData) {
-          console.error(`File not found: ${fileId}`);
           setError("File not found");
-          return;
+        } else {
+          setFile(fileData);
         }
-        
-        if (!fileData.fileUrl) {
-          console.error(`File URL missing: ${fileId}`);
-          setError("File URL missing");
-          return;
-        }
-        
-        console.log(`File loaded successfully: ${fileData.fileName}`);
-        setFile(fileData);
-      } catch (err) {
-        console.error(`Error loading file ${fileId}:`, err);
-        setError(`Could not load file: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      } catch (error) {
+        console.error("Error loading file:", error);
+        setError(
+          error instanceof Error ? error.message : "Failed to load file"
+        );
       } finally {
         setLoading(false);
       }
     };
 
-    if (fileId) {
-      loadFile();
-    } else {
-      setError("Invalid file ID");
-      setLoading(false);
-    }
-  }, [fileId, retryCount]);
+    loadFile();
+  }, [fileId]);
 
-  const handleRetry = () => {
-    setRetryCount(prev => prev + 1);
+  const handleDownload = () => {
+    if (!file || !file.fileUrl) return;
+
+    const link = document.createElement('a');
+    link.href = file.fileUrl;
+    link.download = file.fileName || 'download';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   if (loading) {
     return (
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="flex items-center p-3 text-sm bg-secondary/20 rounded-lg border border-border/40 w-full sm:max-w-md"
-      >
-        <div className="flex items-center justify-center h-10 w-10 rounded-md bg-secondary/50 mr-3">
-          <Loader2 className="h-5 w-5 animate-spin text-primary/70" />
+      <div className="flex items-center justify-center p-6 border rounded-lg bg-muted/30 animate-pulse">
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <span className="text-xs text-muted-foreground">
+            Loading attachment...
+          </span>
         </div>
-        <div className="space-y-2 flex-1">
-          <div className="h-4 w-32 bg-secondary/50 rounded animate-pulse"></div>
-          <div className="h-3 w-16 bg-secondary/30 rounded animate-pulse"></div>
-        </div>
-      </motion.div>
+      </div>
     );
   }
 
   if (error || !file) {
     return (
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="flex flex-col p-3 text-sm bg-background rounded-lg border border-border/30 w-full sm:max-w-md"
-      >
-        <div className="flex items-center">
-          <FileIcon className="mr-2 h-5 w-5 text-destructive/70" />
-          <span className="text-foreground/80 font-medium">Attachment unavailable</span>
+      <div className="flex items-center justify-center p-6 border rounded-lg bg-destructive/10">
+        <div className="flex flex-col items-center gap-2">
+          <AlertCircle className="h-6 w-6 text-destructive" />
+          <span className="text-sm font-medium text-destructive">
+            {error || "File unavailable"}
+          </span>
         </div>
-        <p className="text-xs mt-1 text-muted-foreground">{error || "File could not be loaded"}</p>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={handleRetry} 
-          className="mt-2 self-end h-7 text-xs"
-        >
-          Retry loading
-        </Button>
-      </motion.div>
+      </div>
     );
   }
 
-  // Guarantee a string fileType even if it's missing from the file object
-  const fileType = typeof file.fileType === "string" ? file.fileType : "";
-  const isPreviewable = fileType.startsWith("image/") ||
-    fileType.startsWith("video/") ||
-    fileType.startsWith("audio/") ||
-    fileType === "application/pdf";
+  const getFileIcon = () => {
+    const { fileType } = file;
+    if (!fileType) return <File className="h-6 w-6 text-muted-foreground" />;
+
+    if (fileType.startsWith("image/"))
+      return <ImageIcon className="h-6 w-6 text-blue-500" />;
+    if (fileType.startsWith("text/"))
+      return <FileText className="h-6 w-6 text-orange-500" />;
+    if (fileType.startsWith("audio/"))
+      return <Music className="h-6 w-6 text-purple-500" />;
+    if (fileType.startsWith("video/"))
+      return <Video className="h-6 w-6 text-red-500" />;
+    if (
+      fileType === "application/vnd.ms-excel" ||
+      fileType ===
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+      fileType === "text/csv"
+    )
+      return <Table className="h-6 w-6 text-green-500" />;
+    if (fileType === "application/json")
+      return <FileJson className="h-6 w-6 text-yellow-500" />;
+    if (fileType === "application/pdf")
+      return <FilePdf className="h-6 w-6 text-red-500" />;
+    if (fileType.includes("zip") || fileType.includes("compressed"))
+      return <FileArchive className="h-6 w-6 text-gray-500" />;
+    if (fileType.includes("javascript") || fileType.includes("typescript") || 
+        fileType.includes("html") || fileType.includes("css") || 
+        fileType.includes("python") || fileType.includes("java"))
+      return <FileCode className="h-6 w-6 text-emerald-500" />;
+
+    return <File className="h-6 w-6 text-muted-foreground" />;
+  };
+
+  const isImage = file.fileType?.startsWith("image/") && !imageError;
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 5 }}
+    <motion.div
+      className={cn(
+        "border rounded-lg overflow-hidden bg-background shadow-sm transition-all hover:shadow-md",
+        isImage ? "w-full max-w-[500px]" : "w-full"
+      )}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
-      className="mb-3 rounded-lg overflow-hidden"
+      transition={{ duration: 0.2 }}
     >
-      <div className="w-full sm:max-w-md">
-        <StoredFilePreview 
-          file={file} 
-          onClick={() => isPreviewable && setViewerOpen(true)}
-          showRemoveButton={false}
-          className="w-full cursor-pointer transition-all duration-200 hover:scale-[1.01] hover:shadow-md"
-        />
-        
-        <motion.div 
-          className="flex mt-2 justify-end gap-2"
-          initial={{ opacity: 0.5 }}
-          animate={{ opacity: isHovering ? 1 : 0.8 }}
-          transition={{ duration: 0.2 }}
-        >
-          {isPreviewable && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setViewerOpen(true)}
-              className="h-8 bg-secondary/40 hover:bg-primary/10 hover:text-primary border-border/50 hover:border-primary/30 transition-all duration-200"
-            >
-              <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-              <span className="text-xs sm:text-sm">Preview</span>
-            </Button>
+      {isImage && file.fileUrl ? (
+        <div className="relative aspect-auto w-full max-h-[300px] overflow-hidden bg-muted/30">
+          <Image
+            src={file.fileUrl}
+            alt={file.fileName || "Image attachment"}
+            width={500}
+            height={300}
+            className="w-full h-auto object-contain"
+            unoptimized
+            onError={() => setImageError(true)}
+          />
+        </div>
+      ) : null}
+      <div className="p-3 flex items-center gap-3">
+        <div className="flex-shrink-0">{getFileIcon()}</div>
+        <div className="flex-1 min-w-0">
+          <div className="font-medium truncate" title={file.fileName}>
+            {file.fileName || "Unnamed file"}
+          </div>
+          <div className="text-xs text-muted-foreground flex items-center gap-2">
+            <span>{file.fileType}</span>
+            {file.fileSize && <span>·</span>}
+            {file.fileSize && <span>{formatFileSize(file.fileSize)}</span>}
+          </div>
+        </div>
+        <div className="flex gap-2">
+          {file.fileUrl && (
+            <>
+              <a
+                href={file.fileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs px-2 py-1 bg-primary/10 hover:bg-primary/20 text-primary rounded transition-colors"
+              >
+                View
+              </a>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-7 w-7"
+                onClick={handleDownload}
+                title="Download file"
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+            </>
           )}
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="h-8 bg-secondary/40 hover:bg-primary/10 hover:text-primary border-border/50 hover:border-primary/30 transition-all duration-200" 
-            asChild
-          >
-            <a 
-              href={file.fileUrl} 
-              download={file.fileName}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => {
-                toast({
-                  title: "Download started",
-                  description: `Downloading ${file.fileName}`,
-                });
-              }}
-            >
-              <Download className="h-3.5 w-3.5 mr-1.5" />
-              <span className="text-xs sm:text-sm">Download</span>
-            </a>
-          </Button>
-        </motion.div>
+        </div>
       </div>
-
-      <FileViewer file={file} open={viewerOpen} onOpenChange={setViewerOpen} />
     </motion.div>
   );
 }
