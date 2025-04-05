@@ -93,10 +93,34 @@ export default function NewChat() {
         const { done, value } = await reader.read();
         if (done) break;
 
-        // Simplified streaming with AI SDK - direct text stream
-        const text = decoder.decode(value, { stream: true });
-        accumulatedResponse += text;
-        setStreamingMessage(accumulatedResponse);
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n").filter((line) => line.trim() !== "");
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = line.slice(6);
+
+            if (data === "[DONE]") {
+              // End of stream
+              break;
+            }
+
+            try {
+              const parsed = JSON.parse(data);
+
+              if (parsed.error) {
+                throw new Error(parsed.error);
+              }
+
+              if (parsed.content) {
+                accumulatedResponse += parsed.content;
+                setStreamingMessage(accumulatedResponse);
+              }
+            } catch (e) {
+              console.error("Error parsing JSON:", e);
+            }
+          }
+        }
       }
 
       // Navigate to the new chat

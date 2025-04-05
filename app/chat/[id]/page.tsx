@@ -159,9 +159,6 @@ export default function ChatPage({ params }: { params: { id: string } }) {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
 
-      // AI SDK provides a simpler text stream format
-      let accumulatedResponse = '';
-
       while (true) {
         const { done, value } = await reader.read();
 
@@ -169,10 +166,29 @@ export default function ChatPage({ params }: { params: { id: string } }) {
           break;
         }
 
-        // Decode the chunk and add to accumulated response
-        const text = decoder.decode(value, { stream: true });
-        accumulatedResponse += text;
-        setStreamingMessage(accumulatedResponse);
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n").filter((line) => line.trim() !== "");
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = line.slice(6);
+
+            if (data === "[DONE]") {
+              continue;
+            }
+
+            try {
+              const parsed = JSON.parse(data);
+              const content = parsed.content || "";
+
+              if (content) {
+                setStreamingMessage((prev) => prev + content);
+              }
+            } catch (e) {
+              console.error("Error parsing chunk:", e);
+            }
+          }
+        }
       }
 
       // After streaming is complete, fetch the updated messages
@@ -315,9 +331,6 @@ export default function ChatPage({ params }: { params: { id: string } }) {
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
 
-                // AI SDK provides a simpler text stream format
-                let accumulatedResponse = '';
-
                 while (true) {
                   const { done, value } = await reader.read();
 
@@ -325,10 +338,31 @@ export default function ChatPage({ params }: { params: { id: string } }) {
                     break;
                   }
 
-                  // Decode the chunk and add to accumulated response
-                  const text = decoder.decode(value, { stream: true });
-                  accumulatedResponse += text;
-                  setStreamingMessage(accumulatedResponse);
+                  const chunk = decoder.decode(value, { stream: true });
+                  const lines = chunk
+                    .split("\n")
+                    .filter((line) => line.trim() !== "");
+
+                  for (const line of lines) {
+                    if (line.startsWith("data: ")) {
+                      const data = line.slice(6);
+
+                      if (data === "[DONE]") {
+                        continue;
+                      }
+
+                      try {
+                        const parsed = JSON.parse(data);
+                        const content = parsed.content || "";
+
+                        if (content) {
+                          setStreamingMessage((prev) => prev + content);
+                        }
+                      } catch (e) {
+                        console.error("Error parsing chunk:", e);
+                      }
+                    }
+                  }
                 }
 
                 // After streaming is complete, fetch the updated messages
