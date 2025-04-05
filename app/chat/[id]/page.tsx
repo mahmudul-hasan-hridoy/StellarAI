@@ -138,10 +138,11 @@ export default function ChatPage({ params }: { params: { id: string } }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          message,
+          messages: [{ role: "user", content: message }],
           chatId: params.id,
           userId: user.uid,
           systemPrompt: "", // Use default or add system prompt selection
+          model: selectedModel,
         }),
       });
 

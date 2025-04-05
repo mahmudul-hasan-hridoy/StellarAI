@@ -6,8 +6,10 @@ export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
+    const body = await req.json();
     const {
       messages,
+      message, // For compatibility with older clients
       systemPrompt = "",
       chatId,
       userId,
@@ -15,14 +17,23 @@ export async function POST(req: NextRequest) {
       temperature = 0.7,
       maxTokens = 2048,
       topP = 0.95,
-    } = await req.json();
+      attachments = [],
+    } = body;
 
-    // Check for required fields
-    if (!messages || !chatId || !userId) {
+    // Log the request body for debugging
+    console.log("Request body:", JSON.stringify(body));
+
+    // Check for required fields with more detailed error response
+    const missingFields = [];
+    if (!messages && !message) missingFields.push("messages");
+    if (!chatId) missingFields.push("chatId");
+    if (!userId) missingFields.push("userId");
+
+    if (missingFields.length > 0) {
       return new Response(
         JSON.stringify({
-          error:
-            "Missing required fields: messages, chatId, and userId are required",
+          error: `Missing required fields: ${missingFields.join(", ")} are required`,
+          received: Object.keys(body).join(", "),
         }),
         {
           status: 400,
@@ -30,13 +41,17 @@ export async function POST(req: NextRequest) {
         },
       );
     }
+    
+    // Normalize messages format
+    const normalizedMessages = messages || (message ? [{ role: "user", content: message }] : []);
 
     // Get the latest user message
-    const userMessage = messages.find((msg: any) => msg.role === "user");
-    if (!userMessage) {
+    const userMessage = normalizedMessages.find((msg: any) => msg.role === "user");
+    if (!userMessage && normalizedMessages.length > 0) {
       return new Response(
         JSON.stringify({
           error: "No user message found in the messages array",
+          messages: normalizedMessages,
         }),
         {
           status: 400,
@@ -47,16 +62,17 @@ export async function POST(req: NextRequest) {
 
     // Add user message to Firestore if it's a new message
     // We're assuming the last message in the array is the new one
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage.role === "user") {
+    const lastMessage = normalizedMessages.length > 0 ? normalizedMessages[normalizedMessages.length - 1] : null;
+    if (lastMessage && lastMessage.role === "user") {
       await addMessage(chatId, {
         role: "user",
         content: lastMessage.content,
+        attachments: attachments,
       });
     }
 
     // Prepare request body for Azure OpenAI API
-    const body = JSON.stringify({
+    const apiRequestBody = JSON.stringify({
       messages: [
         {
           role: "system",
@@ -64,7 +80,7 @@ export async function POST(req: NextRequest) {
             systemPrompt ||
             "You are an AI assistant specialized in code generation and problem-solving. Provide clear, concise, and efficient solutions.",
         },
-        ...messages,
+        ...normalizedMessages,
       ],
       stream: true,
       model: model,
@@ -82,7 +98,7 @@ export async function POST(req: NextRequest) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${process.env.AZURE_API_KEY}`,
         },
-        body,
+        body: apiRequestBody,
       },
     );
 
