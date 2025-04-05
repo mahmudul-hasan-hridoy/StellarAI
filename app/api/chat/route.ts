@@ -1,6 +1,8 @@
+
 import type { NextRequest } from "next/server";
 import { addMessage } from "@/lib/chat-service";
-import { StreamingTextResponse, OpenAIStream } from 'ai';
+import { StreamingTextResponse, Message as VercelMessage } from 'ai';
+import { createParser } from 'eventsource-parser';
 
 export const runtime = "nodejs";
 // export const maxDuration = 60
@@ -110,8 +112,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Use AI SDK to convert Azure stream to standard OpenAI-like stream format
-    const openAIStream = OpenAIStream(azureResponse, {
+    // Create a custom stream transformer for the Azure OpenAI response
+    const stream = createAzureOpenAIStream(azureResponse, {
       onCompletion: async (completion) => {
         // Save the complete response to Firestore
         await addMessage(chatId, {
@@ -121,8 +123,8 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Return the streaming response using AI SDK
-    return new StreamingTextResponse(openAIStream);
+    // Return the streaming response
+    return new StreamingTextResponse(stream);
   } catch (error) {
     console.error("Error processing request:", error);
     return new Response(
@@ -136,4 +138,70 @@ export async function POST(req: NextRequest) {
       },
     );
   }
+}
+
+// Custom function to handle Azure OpenAI streaming responses
+async function createAzureOpenAIStream(
+  response: Response,
+  options: { onCompletion?: (completion: string) => void } = {}
+) {
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  if (!response.body) {
+    throw new Error("Response body is null");
+  }
+
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
+  let completion = "";
+
+  const parser = createParser((event) => {
+    if (event.type !== "event") return;
+    if (event.data === "[DONE]") return;
+
+    try {
+      const data = JSON.parse(event.data);
+      // Extract content from the choices - This format matches Azure OpenAI's response structure
+      const content = data.choices?.[0]?.delta?.content || "";
+      if (content) {
+        completion += content;
+        return encoder.encode(content);
+      }
+    } catch (e) {
+      console.error("Error parsing event data:", e);
+    }
+  });
+
+  // Transform the response into a ReadableStream
+  return new ReadableStream({
+    async start(controller) {
+      const reader = response.body.getReader();
+      
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          
+          if (done) {
+            // Call the onCompletion callback with the complete response
+            if (options.onCompletion) {
+              options.onCompletion(completion);
+            }
+            controller.close();
+            break;
+          }
+          
+          const text = decoder.decode(value);
+          const chunks = parser.feed(text);
+          
+          for (const chunk of chunks) {
+            controller.enqueue(chunk);
+          }
+        }
+      } catch (error) {
+        controller.error(error);
+      }
+    }
+  });
 }
