@@ -14,7 +14,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
   ({ message }, ref) => {
     const isUser = message.role === "user";
 
-    const formatTimestamp = (timestamp: any) => {
+    const formatTimestamp = (timestamp: string | number | Date) => {
       try {
         // Check if timestamp is valid
         const date = new Date(timestamp);
@@ -53,12 +53,13 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
           initial={{ scale: 0.8 }}
           animate={{ scale: 1 }}
           transition={{ duration: 0.2 }}
+        >
           {isUser ? (
             <User className="h-3 w-3 sm:h-4 sm:w-4" />
           ) : (
             <Bot className="h-3 w-3 sm:h-4 sm:w-4" />
           )}
-        </div>
+        </motion.div>
         <div className="flex-1 space-y-2 sm:space-y-3 max-w-[97%] sm:max-w-[85%] md:max-w-[90%]">
           {hasAttachments && (
             <div className="mb-3 space-y-2">
@@ -70,12 +71,15 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
               </div>
             </div>
           )}
-
           <LLMMarkdown content={message.content || "No content available"} />
           <div className="text-xs text-muted-foreground">{formattedTime}</div>
-        </motion.div>
+        </div>
       </motion.div>
     );
   },
 );
+
+// Add display name for React DevTools
+ChatMessage.displayName = "ChatMessage";
+
 export default ChatMessage;

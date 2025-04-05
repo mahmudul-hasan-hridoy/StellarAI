@@ -29,8 +29,6 @@ export function ChatForm({
   const [inputValue, setInputValue] = useState(initialValue);
   const [attachedFiles, setAttachedFiles] = useState<StoredFile[]>([]);
 
-  // We only use GPT-4o so no need for model selection
-
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-resize textarea
@@ -58,14 +56,14 @@ export function ChatForm({
     try {
       // Prepare message content with file information for AI processing
       let processedMessage = inputValue;
-      
+
       // If there are attachments, include their information in the message
       if (attachedFiles.length > 0) {
         // Create file references that the AI can understand
         const fileDescriptions = attachedFiles.map(file => 
           `[Attached file: ${file.fileName}, Type: ${file.fileType || 'unknown'}, Size: ${formatFileSize(file.fileSize || 0)}]`
         ).join("\n");
-        
+
         // Add file descriptions to the message
         if (processedMessage.trim()) {
           processedMessage += "\n\n" + fileDescriptions;
@@ -73,11 +71,11 @@ export function ChatForm({
           processedMessage = fileDescriptions;
         }
       }
-      
+
       // Send message with file IDs for backend storage
       const fileIds = attachedFiles.map((file) => file.id);
       await onSendMessage(processedMessage, fileIds);
-      
+
       setInputValue("");
       setAttachedFiles([]);
 
@@ -89,7 +87,7 @@ export function ChatForm({
       console.error("Error sending message:", error);
     }
   };
-  
+
   // Helper function to format file size
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
@@ -114,6 +112,7 @@ export function ChatForm({
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.3 }}
         whileHover={{ boxShadow: "0 0 0 1px rgba(255, 255, 255, 0.1)" }}
+      >
         {attachedFiles.length > 0 && (
           <div className="px-2 sm:px-4 pt-2 sm:pt-3 flex flex-wrap gap-1 sm:gap-2">
             {attachedFiles.map((file) => (
@@ -213,7 +212,7 @@ export function ChatForm({
               ) : (
                 <ArrowUp className="h-4 w-4 sm:h-[18px] sm:w-[18px]" aria-hidden="true" />
               )}
-            </button>
+            </motion.button>
           </div>
         </div>
       </motion.div>
