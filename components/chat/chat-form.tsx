@@ -26,20 +26,9 @@ export function ChatForm({
   onKeyDown,
 }: ChatFormProps) {
   const [inputValue, setInputValue] = useState(initialValue);
-  const [selectedModel, setSelectedModel] = useState("deepseek-v3");
-  const [deepThink, setDeepThink] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<StoredFile[]>([]);
   
-  // Update model based on attachments and deep think mode
-  useEffect(() => {
-    if (attachedFiles.length > 0) {
-      setSelectedModel("gpt-4o");
-    } else if (deepThink) {
-      setSelectedModel("Deepseek-r1");
-    } else {
-      setSelectedModel("Deepseek-v3");
-    }
-  }, [attachedFiles.length, deepThink]);
+  // We only use GPT-4o so no need for model selection
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -161,22 +150,9 @@ export function ChatForm({
           <div className="flex items-center gap-1 sm:gap-2">
             <div className="flex items-center gap-2">
               {showModelSelection && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setDeepThink(!deepThink)}
-                    className={cn(
-                      "text-xs sm:text-sm px-2 py-1 rounded-md transition-colors",
-                      deepThink ? "bg-primary/20 text-primary" : "text-gray-400 hover:text-white"
-                    )}
-                    title="Toggle Deep Think mode"
-                  >
-                    🤔 Deep Think
-                  </button>
-                  <div className="text-xs sm:text-sm text-gray-400 hidden sm:block">
-                    {selectedModel}
-                  </div>
-                </>
+                <div className="text-xs sm:text-sm text-gray-400 hidden sm:block">
+                  GPT-4o
+                </div>
               )}
             </div>
             <button

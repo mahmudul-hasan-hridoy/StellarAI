@@ -29,7 +29,8 @@ export default function ChatPage({ params }: { params: { id: string } }) {
   const [sending, setSending] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [streamingMessage, setStreamingMessage] = useState<string>("");
-  const [selectedModel, setSelectedModel] = useState("DeepSeek V3");
+  //Removed selectedModel state.
+  //const [selectedModel, setSelectedModel] = useState("DeepSeek V3");
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -142,7 +143,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
           chatId: params.id,
           userId: user.uid,
           systemPrompt: "", // Use default or add system prompt selection
-          model: selectedModel,
+          model: "gpt-4o", // Always use GPT-4o
         }),
       });
 
@@ -315,6 +316,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
                     userId: user.uid,
                     attachments: attachments,
                     systemPrompt: "", // Use default or add system prompt selection
+                    model: "gpt-4o", // Always use GPT-4o
                   }),
                 });
 

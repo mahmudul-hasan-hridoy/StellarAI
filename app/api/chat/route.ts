@@ -79,14 +79,12 @@ export async function POST(req: NextRequest) {
           });
         }
 
-        // Send the final message with usage data
-        if (usage) {
-          await writer.write(
-            encoder.encode(
-              `data: ${JSON.stringify({ done: true, usage })}\n\n`,
-            ),
-          );
-        }
+        // Always send completion message, with usage if available
+        await writer.write(
+          encoder.encode(
+            `data: ${JSON.stringify({ done: true, usage: usage || {} })}\n\n`,
+          ),
+        );
 
         // Send the [DONE] message
         await writer.write(encoder.encode("data: [DONE]\n\n"));
