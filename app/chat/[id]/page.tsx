@@ -141,9 +141,10 @@ export default function ChatPage({ params }: { params: { id: string } }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          messages: [{ role: "user", content: message }],
+          message: message, // Changed to match API route expectations
           chatId: params.id,
           userId: user.uid,
+          attachments: [], // Added empty attachments array for consistency
           systemPrompt: "", // Use default or add system prompt selection
           model: "gpt-4o", // Always use GPT-4o
         }),
@@ -207,7 +208,6 @@ export default function ChatPage({ params }: { params: { id: string } }) {
       }
 
       // After streaming is complete, fetch the updated messages
-
       refreshChats();
     } catch (error) {
       console.error("Error sending message:", error);

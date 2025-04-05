@@ -26,6 +26,8 @@ export async function POST(req: NextRequest) {
       );
     }
     
+    console.log("Processing chat request:", { chatId, messageCount: messageArray.length });
+    
     // If there are attachments, we could process them here
     // For now, the file references are included in the message content
     // This keeps the approach compatible with text-only LLMs

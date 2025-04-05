@@ -143,25 +143,34 @@ export const getUserChats = async (userId: string): Promise<Chat[]> => {
 
 export async function addMessage(
   chatId: string, 
-  message: Omit<Message, "id" | "timestamp">
+  message: Omit<Message, "id"> | Omit<Message, "id" | "timestamp">
 ) {
   try {
     // Add message to messages subcollection
     const messagesRef = collection(db, "chats", chatId, "messages");
+    
+    // Handle both timestamp formats (string from client or missing entirely)
     const messageData = {
       ...message,
-      timestamp: serverTimestamp(),
+      // If the message already has a timestamp (as string), keep it for UI consistency
+      // Otherwise use server timestamp for new messages
+      timestamp: message.timestamp || serverTimestamp(),
       // Include attachments if present
       ...(message.attachments && { attachments: message.attachments }),
     };
 
-    await addDoc(messagesRef, messageData);
-
+    console.log(`Adding message to chat ${chatId}:`, 
+      { role: messageData.role, contentLength: messageData.content?.length || 0 });
+    
+    const docRef = await addDoc(messagesRef, messageData);
+    
     // Update the chat's updatedAt field
     const chatRef = doc(db, "chats", chatId);
     await updateDoc(chatRef, {
       updatedAt: serverTimestamp(),
     });
+    
+    return docRef.id;
   } catch (error) {
     console.error("Error adding message:", error);
     throw error;
