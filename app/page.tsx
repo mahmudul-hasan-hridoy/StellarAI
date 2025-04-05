@@ -3,7 +3,7 @@ import { ArrowRight, Sparkles, Zap, Shield, BarChart } from "lucide-react";
 
 export default function Home() {
   return (
-      {/* Hero Section */}
+    <>
       <section className="py-12 md:py-24 lg:py-32 bg-background">
         <div className="container-custom space-y-10 text-center">
           <div className="space-y-4">
@@ -61,7 +61,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features Section */}
       <section className="py-12 md:py-24 bg-muted">
         <div className="container-custom">
           <div className="text-center space-y-4 mb-12">
@@ -121,7 +120,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA Section */}
       <section className="py-12 md:py-24 bg-background">
         <div className="container-custom">
           <div className="rounded-lg border bg-card p-8 md:p-12">
@@ -148,6 +146,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-    </div>
+    </>
   );
 }
