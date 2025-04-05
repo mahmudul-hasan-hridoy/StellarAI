@@ -126,8 +126,8 @@ export const attachFileToChat = async (
 export const getFileById = async (
   fileId: string,
 ): Promise<StoredFile | null> => {
-  if (!fileId) {
-    console.error("Invalid file ID provided");
+  if (!fileId || typeof fileId !== 'string') {
+    console.error("Invalid file ID provided:", fileId);
     return null;
   }
 
@@ -141,18 +141,27 @@ export const getFileById = async (
     // If not found, try querying with the document ID
     if (querySnapshot.empty) {
       console.log(`No file found with id field equal to ${fileId}, trying document ID`);
-      const docRef = doc(db, "files", fileId);
-      const docSnap = await docRef.get();
-      
-      if (docSnap.exists()) {
-        console.log(`File found with document ID: ${fileId}`);
-        return {
-          id: docSnap.id,
-          ...docSnap.data(),
-        } as StoredFile;
+      try {
+        const docRef = doc(db, "files", fileId);
+        const docSnap = await docRef.get();
+        
+        if (docSnap.exists()) {
+          console.log(`File found with document ID: ${fileId}`);
+          return {
+            id: docSnap.id,
+            ...docSnap.data(),
+          } as StoredFile;
+        }
+      } catch (err) {
+        console.error(`Error getting document with ID ${fileId}:`, err);
       }
       
       console.error(`File not found: ${fileId}`);
+      return null;
+    }
+
+    if (!querySnapshot.docs[0]) {
+      console.error(`Query snapshot has no documents for ${fileId}`);
       return null;
     }
 

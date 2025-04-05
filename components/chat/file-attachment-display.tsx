@@ -31,6 +31,14 @@ export function FileAttachmentDisplay({ fileId }: FileAttachmentDisplayProps) {
         setLoading(true);
         setError(null);
         
+        // Ensure fileId is a string before proceeding
+        if (typeof fileId !== 'string') {
+          console.error(`Invalid file ID type: ${typeof fileId}`);
+          setError(`Invalid file ID type: ${typeof fileId}`);
+          setLoading(false);
+          return;
+        }
+        
         console.log(`Loading file with ID: ${fileId}`);
         const fileData = await getFileById(fileId);
         

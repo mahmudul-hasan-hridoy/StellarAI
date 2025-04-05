@@ -70,17 +70,25 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                 </span>
               </div>
               <div className="flex flex-col sm:flex-row flex-wrap gap-3">
-                {message.attachments?.map((fileId, index) => (
-                  <motion.div 
-                    key={`${fileId}-${index}`}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className="w-full sm:max-w-[300px]"
-                  >
-                    <FileAttachmentDisplay fileId={fileId} />
-                  </motion.div>
-                ))}
+                {message.attachments?.map((fileId, index) => {
+                  // Ensure fileId is a valid string
+                  if (!fileId || typeof fileId !== 'string') {
+                    console.error('Invalid attachment ID:', fileId);
+                    return null;
+                  }
+                  
+                  return (
+                    <motion.div 
+                      key={`${fileId}-${index}`}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.3, delay: index * 0.1 }}
+                      className="w-full sm:max-w-[300px]"
+                    >
+                      <FileAttachmentDisplay fileId={fileId} />
+                    </motion.div>
+                  );
+                })}
               </div>
             </div>
           )}
