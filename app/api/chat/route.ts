@@ -11,6 +11,7 @@ export async function POST(req: NextRequest) {
       userId,
       systemPrompt = "",
       model = "gpt-4o",
+      attachments = [],
     } = await req.json();
 
     // Handle both message (string) and messages (array) formats
@@ -24,6 +25,10 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
+    
+    // If there are attachments, we could process them here
+    // For now, the file references are included in the message content
+    // This keeps the approach compatible with text-only LLMs
 
     // Initialize OpenAI client with Azure configuration
     const client = new OpenAI({

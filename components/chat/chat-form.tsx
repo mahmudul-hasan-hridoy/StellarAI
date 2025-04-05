@@ -55,8 +55,28 @@ export function ChatForm({
     if (!inputValue.trim() && attachedFiles.length === 0) return;
 
     try {
+      // Prepare message content with file information for AI processing
+      let processedMessage = inputValue;
+      
+      // If there are attachments, include their information in the message
+      if (attachedFiles.length > 0) {
+        // Create file references that the AI can understand
+        const fileDescriptions = attachedFiles.map(file => 
+          `[Attached file: ${file.fileName}, Type: ${file.fileType || 'unknown'}, Size: ${formatFileSize(file.fileSize || 0)}]`
+        ).join("\n");
+        
+        // Add file descriptions to the message
+        if (processedMessage.trim()) {
+          processedMessage += "\n\n" + fileDescriptions;
+        } else {
+          processedMessage = fileDescriptions;
+        }
+      }
+      
+      // Send message with file IDs for backend storage
       const fileIds = attachedFiles.map((file) => file.id);
-      await onSendMessage(inputValue, fileIds);
+      await onSendMessage(processedMessage, fileIds);
+      
       setInputValue("");
       setAttachedFiles([]);
 
@@ -67,6 +87,15 @@ export function ChatForm({
     } catch (error) {
       console.error("Error sending message:", error);
     }
+  };
+  
+  // Helper function to format file size
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

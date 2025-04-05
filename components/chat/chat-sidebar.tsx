@@ -167,17 +167,6 @@ export default function ChatSidebar() {
       </div>
 
       <div className="mt-auto pt-2 px-3">
-        <Link
-          href="/files"
-          className={cn(
-            "group flex items-center px-2 py-2 text-sm font-medium rounded-md hover:bg-secondary",
-            pathname === "/files" && "bg-secondary"
-          )}
-        >
-          <FileIcon className="mr-3 h-4 w-4" />
-          Files
-        </Link>
-        
         <UserDropdown />
       </div>
     </div>

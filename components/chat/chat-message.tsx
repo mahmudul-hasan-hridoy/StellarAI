@@ -47,10 +47,13 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
         </div>
         <div className="flex-1 space-y-2 sm:space-y-3 max-w-[97%] sm:max-w-[85%] md:max-w-[90%]">
           {hasAttachments && (
-            <div className="mb-2">
-              {message.attachments?.map((fileId) => (
-                <FileAttachmentDisplay key={fileId} fileId={fileId} />
-              ))}
+            <div className="mb-3 space-y-2">
+              <div className="text-xs text-gray-400 font-medium">Attachments:</div>
+              <div className="flex flex-wrap gap-2">
+                {message.attachments?.map((fileId) => (
+                  <FileAttachmentDisplay key={fileId} fileId={fileId} />
+                ))}
+              </div>
             </div>
           )}
 
