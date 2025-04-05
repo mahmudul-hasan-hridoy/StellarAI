@@ -152,9 +152,8 @@ export async function addMessage(
     // Handle both timestamp formats (string from client or missing entirely)
     const messageData = {
       ...message,
-      // If the message already has a timestamp (as string), keep it for UI consistency
-      // Otherwise use server timestamp for new messages
-      timestamp: message.timestamp || serverTimestamp(),
+      // Check if timestamp exists in the message object before accessing it
+      timestamp: 'timestamp' in message ? message.timestamp : serverTimestamp(),
       // Include attachments if present
       ...(message.attachments && { attachments: message.attachments }),
     };
