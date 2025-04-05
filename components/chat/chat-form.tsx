@@ -166,13 +166,15 @@ export function ChatForm({
                   ? "opacity-50"
                   : "bg-primary/90 hover:bg-primary",
               )}
+              aria-label={isLoading ? "Sending message..." : "Send message"}
+              title={isLoading ? "Sending..." : "Send message"}
             >
               {isLoading ? (
-                <span className="flex items-center justify-center h-4 w-4 sm:h-[18px] sm:w-[18px]">
+                <span className="flex items-center justify-center h-4 w-4 sm:h-[18px] sm:w-[18px]" aria-hidden="true">
                   <span className="animate-spin h-2.5 w-2.5 sm:h-3 sm:w-3 border-2 border-white border-t-transparent rounded-full"></span>
                 </span>
               ) : (
-                <ArrowUp className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
+                <ArrowUp className="h-4 w-4 sm:h-[18px] sm:w-[18px]" aria-hidden="true" />
               )}
             </button>
           </div>

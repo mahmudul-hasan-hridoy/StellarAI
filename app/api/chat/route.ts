@@ -90,7 +90,10 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // Send the [DONE] message
+        // Send stream completion signal
+        await writer.write(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`));
+        
+        // Also send [DONE] for compatibility with some clients
         await writer.write(encoder.encode("data: [DONE]\n\n"));
       } catch (error) {
         console.error("Error processing stream:", error);

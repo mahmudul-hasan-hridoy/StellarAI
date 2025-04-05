@@ -37,8 +37,8 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
       message.attachments && message.attachments.length > 0;
 
     return (
-      <div ref={ref} className="flex items-start gap-2 sm:gap-4 w-full max-w-full">
-        <div className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 select-none items-center justify-center rounded-md border text-xs sm:text-sm bg-muted text-muted-foreground">
+      <div ref={ref} className="flex items-start gap-2 sm:gap-4 w-full max-w-full" role="listitem" aria-label={`${isUser ? 'User' : 'Assistant'} message`}>
+        <div className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 select-none items-center justify-center rounded-md border text-xs sm:text-sm bg-muted text-muted-foreground" aria-hidden="true">
           {isUser ? (
             <User className="h-3 w-3 sm:h-4 sm:w-4" />
           ) : (

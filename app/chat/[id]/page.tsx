@@ -242,7 +242,12 @@ export default function ChatPage({ params }: { params: { id: string } }) {
   return (
     <div className="flex flex-col w-full md:h-[100dvh] h-[calc(100dvh-60px)] overflow-hidden">
       {/* Chat messages area - Scrollable container */}
-      <div className="flex-1 w-full max-w-full overflow-y-auto p-2 pb-4 sm:p-4 sm:pb-6 space-y-4 sm:space-y-6">
+      <div 
+        className="flex-1 w-full max-w-full overflow-y-auto p-2 pb-4 sm:p-4 sm:pb-6 space-y-4 sm:space-y-6"
+        role="log"
+        aria-label="Chat conversation"
+        aria-live="polite"
+      >
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -264,14 +269,15 @@ export default function ChatPage({ params }: { params: { id: string } }) {
 
             {/* Streaming message */}
             {streamingMessage && (
-              <div className="flex items-start gap-2 sm:gap-4">
+              <div className="flex items-start gap-2 sm:gap-4" role="status" aria-label="Assistant is typing">
                 <div className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-md border text-sm bg-muted text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                 </div>
                 <div className="flex-1 max-w-full w-full space-y-2 w-full sm:max-w-[85%] md:max-w-[90%]">
-                  <div className="prose prose-invert max-w-full w-full p-2 sm:p-3 rounded-lg bg-muted">
+                  <div className="prose prose-invert max-w-full w-full p-2 sm:p-3 rounded-lg bg-muted border border-primary/20 shadow-sm">
                     {streamingMessage}
                   </div>
+                  <div className="text-xs text-muted-foreground animate-pulse">Assistant is typing...</div>
                 </div>
               </div>
             )}
@@ -303,6 +309,10 @@ export default function ChatPage({ params }: { params: { id: string } }) {
                   })),
                 };
 
+                // Save user message to database first
+                await addMessage(params.id, userMessage);
+                
+                // Then update UI
                 setMessages((prev) => [...prev, userMessage]);
 
                 // Scroll to bottom
@@ -376,7 +386,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
                             const updatedChat = await getChat(params.id);
                             if (updatedChat) {
                               setMessages(updatedChat.messages || []);
-                              setStreamingMessage("");
+                              setStreamingMessage(""); // Clear streaming message
                             }
                           }, 500);
                         }
