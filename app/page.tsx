@@ -1,10 +1,8 @@
 import Link from "next/link";
 import { ArrowRight, Sparkles, Zap, Shield, BarChart } from "lucide-react";
-import LayoutWrapper from "@/components/layout-wrapper";
 
 export default function Home() {
   return (
-    <LayoutWrapper>
       {/* Hero Section */}
       <section className="py-12 md:py-24 lg:py-32 bg-background">
         <div className="container-custom space-y-10 text-center">
@@ -150,6 +148,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-    </LayoutWrapper>
+    </div>
   );
 }
