@@ -1,14 +1,194 @@
 
 "use client";
 
-import React, { FC, memo, useState } from "react";
+import React, { FC, memo, useState, useEffect, useRef, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { CodeBlock } from "./code-block";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Check, Copy, ExternalLink, ArrowLeft, Circle } from "lucide-react";
+import Link from "next/link";
+import katex from "katex";
+import "katex/dist/katex.min.css";
+import mermaid from "mermaid";
+import hljs from "highlight.js";
+import "highlight.js/styles/github-dark.css";
+
+// Initialize services
+hljs.configure({
+  languages: [
+    "javascript",
+    "typescript",
+    "html",
+    "css",
+    "bash",
+    "json",
+    "python",
+    "java",
+    "ruby",
+    "php",
+    "c",
+    "cpp",
+    "go",
+    "rust",
+  ],
+});
+
+// Constants
+const ANCHOR_CLASS_NAME = "text-primary hover:underline font-medium transition-colors";
 
 interface LLMMarkdownProps {
   content: string;
   className?: string;
 }
+
+// MermaidDiagram Component
+interface MermaidProps {
+  content: string;
+}
+
+const MermaidDiagram: FC<MermaidProps> = ({ content }) => {
+  const [diagram, setDiagram] = useState<string | boolean>(true);
+  
+  useEffect(() => {
+    // Initialize mermaid
+    mermaid.initialize({ startOnLoad: false, theme: "dark" });
+    
+    const render = async () => {
+      try {
+        const id = `mermaid-svg-${Math.round(Math.random() * 10000000)}`;
+        if (await mermaid.parse(content, { suppressErrors: true })) {
+          const { svg } = await mermaid.render(id, content);
+          setDiagram(svg);
+        } else {
+          setDiagram(false);
+        }
+      } catch (error) {
+        console.error("Mermaid rendering error:", error);
+        setDiagram(false);
+      }
+    };
+    render();
+  }, [content]);
+
+  if (diagram === true) {
+    return (
+      <div className="flex gap-2 items-center">
+        <Circle className="animate-spin w-4 h-4" />
+        <p className="text-sm">Rendering diagram...</p>
+      </div>
+    );
+  }
+
+  if (diagram === false) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Unable to render this diagram. Try copying it into the{" "}
+        <Link
+          href="https://mermaid.live/edit"
+          className={ANCHOR_CLASS_NAME}
+          target="_blank"
+        >
+          Mermaid Live Editor
+        </Link>
+        .
+      </p>
+    );
+  }
+
+  return <div dangerouslySetInnerHTML={{ __html: diagram }} />;
+};
+
+// Enhanced Code Block with Copy Button
+interface EnhancedCodeBlockProps {
+  language: string;
+  code: string;
+  className?: string;
+}
+
+const EnhancedCodeBlock: FC<EnhancedCodeBlockProps> = ({ language, code, className }) => {
+  const [copied, setCopied] = useState(false);
+  const [showMermaidPreview, setShowMermaidPreview] = useState(false);
+  const ref = useRef<HTMLElement>(null);
+  
+  const isMermaid = language === "mermaid";
+
+  // Highlight code on mount and update
+  useEffect(() => {
+    if (ref.current && !isMermaid) {
+      hljs.highlightElement(ref.current);
+    }
+  }, [code, isMermaid]);
+
+  useEffect(() => {
+    if (copied) {
+      const interval = setTimeout(() => setCopied(false), 1000);
+      return () => clearTimeout(interval);
+    }
+  }, [copied]);
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+  };
+
+  return (
+    <div className="relative my-4 group">
+      <div className="overflow-auto rounded-md bg-muted">
+        <div className="flex items-center justify-between px-4 py-2 border-b bg-muted">
+          <div className="text-xs text-muted-foreground">
+            {language}
+          </div>
+          <div className="flex gap-1">
+            <button
+              onClick={copyToClipboard}
+              className="h-7 w-7 rounded-md p-1 text-muted-foreground hover:bg-muted-foreground/20 transition-colors"
+            >
+              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            </button>
+            {isMermaid && (
+              <>
+                <button
+                  onClick={() => setShowMermaidPreview(true)}
+                  className="h-7 w-7 rounded-md p-1 text-muted-foreground hover:bg-muted-foreground/20 transition-colors"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </button>
+                <Dialog
+                  open={showMermaidPreview}
+                  onOpenChange={setShowMermaidPreview}
+                >
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Mermaid Diagram Preview</DialogTitle>
+                    </DialogHeader>
+                    <MermaidDiagram content={code} />
+                  </DialogContent>
+                </Dialog>
+              </>
+            )}
+          </div>
+        </div>
+        
+        {isMermaid ? (
+          <pre className="p-4 text-sm overflow-x-auto">
+            <code>{code}</code>
+          </pre>
+        ) : (
+          <pre className="p-4 text-sm">
+            <code ref={ref} className={cn("hljs language-" + language)}>
+              {code}
+            </code>
+          </pre>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export const LLMMarkdown: FC<LLMMarkdownProps> = memo(({ content, className }) => {
   if (!content || content.trim() === '') {
@@ -25,6 +205,8 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(({ content, className }) =
   let currentListType: 'ul' | 'ol' | null = null;
   let inBlockQuote = false;
   let blockQuoteContent: string[] = [];
+  let inMath = false;
+  let mathContent: string[] = [];
 
   const flushParagraph = () => {
     if (currentParagraph.length > 0) {
@@ -44,15 +226,43 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(({ content, className }) =
       let language = currentCodeBlock.language || 'plaintext';
       
       elements.push(
-        <div key={`code-${elements.length}`} className="my-6">
-          <CodeBlock 
-            language={language} 
-            code={code} 
-            showMermaidPreview={language === 'mermaid'}
-          />
-        </div>
+        <EnhancedCodeBlock 
+          key={`code-${elements.length}`}
+          language={language} 
+          code={code} 
+        />
       );
       currentCodeBlock = null;
+    }
+  };
+
+  const flushMath = () => {
+    if (mathContent.length > 0) {
+      const mathString = mathContent.join('\n');
+      // Render using KaTeX
+      try {
+        const html = katex.renderToString(mathString, {
+          displayMode: true,
+          throwOnError: false,
+          errorColor: '#ff0000',
+        });
+        elements.push(
+          <div 
+            key={`math-${elements.length}`} 
+            className="my-4 overflow-x-auto"
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        );
+      } catch (error) {
+        console.error("KaTeX rendering error:", error);
+        elements.push(
+          <div key={`math-error-${elements.length}`} className="text-red-500">
+            Error rendering math: {mathString}
+          </div>
+        );
+      }
+      mathContent = [];
+      inMath = false;
     }
   };
 
@@ -92,6 +302,24 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(({ content, className }) =
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+    
+    // Math blocks with $$ (KaTeX)
+    if (line.trim() === '$$') {
+      if (inMath) {
+        flushMath();
+      } else {
+        flushParagraph();
+        flushList();
+        flushBlockQuote();
+        inMath = true;
+      }
+      continue;
+    }
+    
+    if (inMath) {
+      mathContent.push(line);
+      continue;
+    }
     
     // Code blocks
     if (line.startsWith('```')) {
@@ -226,6 +454,7 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(({ content, className }) =
   flushCodeBlock();
   flushList();
   flushBlockQuote();
+  flushMath();
 
   return (
     <div className={cn("prose dark:prose-invert prose-sm sm:prose-base max-w-full break-words text-foreground", className)}>
@@ -234,13 +463,48 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(({ content, className }) =
   );
 });
 
-// Helper to parse inline elements like bold, italic, code, etc.
+// Helper to parse inline elements like bold, italic, code, math, etc.
 function parseInlineElements(text: string): React.ReactNode[] {
   const segments: React.ReactNode[] = [];
   let currentText = '';
   
-  // Process inline code, bold, italic, links
+  // Process inline code, bold, italic, links, math
   for (let i = 0; i < text.length; i++) {
+    // Inline math with $
+    if (text[i] === '$' && text.indexOf('$', i + 1) !== -1 && text[i-1] !== '\\') {
+      if (currentText) {
+        segments.push(currentText);
+        currentText = '';
+      }
+      
+      const endIndex = text.indexOf('$', i + 1);
+      const mathText = text.slice(i + 1, endIndex);
+      
+      try {
+        const html = katex.renderToString(mathText, {
+          displayMode: false,
+          throwOnError: false,
+          errorColor: '#ff0000',
+        });
+        
+        segments.push(
+          <span 
+            key={segments.length}
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        );
+      } catch (error) {
+        segments.push(
+          <span key={segments.length} className="text-red-500">
+            ${mathText}$
+          </span>
+        );
+      }
+      
+      i = endIndex;
+      continue;
+    }
+    
     // Inline code with `
     if (text[i] === '`' && text.indexOf('`', i + 1) !== -1) {
       if (currentText) {
@@ -359,7 +623,5 @@ function parseInlineElements(text: string): React.ReactNode[] {
   
   return segments;
 }
-
-// No language detection needed anymore as AI provides language in code blocks
 
 LLMMarkdown.displayName = "LLMMarkdown";
