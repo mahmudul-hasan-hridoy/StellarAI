@@ -169,7 +169,7 @@ const EnhancedCodeBlock: FC<EnhancedCodeBlockProps> = ({
   return (
     <div className="relative my-4 group">
       <div className="overflow-auto rounded-md bg-muted/80 border border-muted-foreground/20">
-        <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/90">
+        <div className="flex items-center justify-between px-2 sm:px-4 py-2 border-b bg-muted/90">
           <div className="text-xs text-muted-foreground flex items-center">
             {isMermaid ? (
               <span className="flex items-center gap-1">
@@ -191,7 +191,7 @@ const EnhancedCodeBlock: FC<EnhancedCodeBlockProps> = ({
                 <span className="ml-1">mermaid</span>
               </span>
             ) : (
-              <span>{language}</span>
+              <span className="truncate max-w-[100px] sm:max-w-full">{language}</span>
             )}
           </div>
           <div className="flex gap-1">
@@ -219,7 +219,7 @@ const EnhancedCodeBlock: FC<EnhancedCodeBlockProps> = ({
                   open={showMermaidPreview}
                   onOpenChange={setShowMermaidPreview}
                 >
-                  <DialogContent className="max-w-3xl">
+                  <DialogContent className="max-w-[90vw] sm:max-w-3xl">
                     <DialogHeader>
                       <DialogTitle>Mermaid Diagram Preview</DialogTitle>
                     </DialogHeader>
@@ -234,11 +234,11 @@ const EnhancedCodeBlock: FC<EnhancedCodeBlockProps> = ({
         </div>
 
         {isMermaid ? (
-          <pre className="p-4 text-sm overflow-x-auto">
+          <pre className="p-2 sm:p-4 text-xs sm:text-sm overflow-x-auto">
             <code>{code}</code>
           </pre>
         ) : (
-          <pre className="p-4 text-sm">
+          <pre className="p-2 sm:p-4 text-xs sm:text-sm overflow-x-auto">
             <code ref={ref} className={cn("hljs language-" + language)}>
               {code}
             </code>
@@ -359,7 +359,7 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(
         elements.push(
           <p
             key={`p-${elements.length}`}
-            className="mb-4 leading-relaxed text-foreground"
+            className="mb-3 sm:mb-4 leading-relaxed text-foreground text-sm sm:text-base break-words"
           >
             {parseInlineElements(currentParagraph.join("\n"))}
           </p>,
@@ -398,14 +398,14 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(
           elements.push(
             <div
               key={`math-${elements.length}`}
-              className="my-4 overflow-x-auto"
+              className="my-3 sm:my-4 overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0"
               dangerouslySetInnerHTML={{ __html: html }}
             />,
           );
         } catch (error) {
           console.error("KaTeX rendering error:", error);
           elements.push(
-            <div key={`math-error-${elements.length}`} className="text-red-500">
+            <div key={`math-error-${elements.length}`} className="text-red-500 text-sm sm:text-base">
               Error rendering math: {mathString}
             </div>,
           );
@@ -422,12 +422,12 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(
           <ListTag
             key={`list-${elements.length}`}
             className={cn(
-              "mb-4 pl-6",
+              "mb-3 sm:mb-4 pl-4 sm:pl-6",
               currentListType === "ol" ? "list-decimal" : "list-disc",
             )}
           >
             {currentListItems.map((item, i) => (
-              <li key={i} className="mb-1.5 text-foreground">
+              <li key={i} className="mb-1 sm:mb-1.5 text-foreground text-sm sm:text-base break-words">
                 {parseInlineElements(item)}
               </li>
             ))}
@@ -443,7 +443,7 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(
         elements.push(
           <blockquote
             key={`blockquote-${elements.length}`}
-            className="border-l-4 border-primary/60 pl-4 italic mb-5 py-1 text-muted-foreground"
+            className="border-l-4 border-primary/60 pl-3 sm:pl-4 italic mb-4 sm:mb-5 py-1 text-muted-foreground text-sm sm:text-base"
           >
             {parseInlineElements(blockQuoteContent.join("\n"))}
           </blockquote>,
@@ -596,7 +596,7 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(
         elements.push(
           <h1
             key={`h1-${elements.length}`}
-            className="text-2xl font-bold mb-4 mt-6 text-foreground"
+            className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 mt-4 sm:mt-6 text-foreground break-words"
           >
             {parseInlineElements(line.slice(2))}
           </h1>,
@@ -613,7 +613,7 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(
         elements.push(
           <h2
             key={`h2-${elements.length}`}
-            className="text-xl font-bold mb-3 mt-5 text-foreground"
+            className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 mt-4 sm:mt-5 text-foreground break-words"
           >
             {parseInlineElements(line.slice(3))}
           </h2>,
@@ -630,7 +630,7 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(
         elements.push(
           <h3
             key={`h3-${elements.length}`}
-            className="text-lg font-semibold mb-3 mt-4 text-foreground"
+            className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 mt-3 sm:mt-4 text-foreground break-words"
           >
             {parseInlineElements(line.slice(4))}
           </h3>,
@@ -647,7 +647,7 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(
         elements.push(
           <h4
             key={`h4-${elements.length}`}
-            className="text-base font-semibold mb-2 mt-3 text-foreground"
+            className="text-sm sm:text-base font-semibold mb-1.5 sm:mb-2 mt-2 sm:mt-3 text-foreground break-words"
           >
             {parseInlineElements(line.slice(5))}
           </h4>,
@@ -737,7 +737,7 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(
     return (
       <div
         className={cn(
-          "prose dark:prose-invert prose-sm sm:prose-base max-w-full break-words text-foreground",
+          "prose dark:prose-invert prose-sm sm:prose-base max-w-full break-words text-foreground px-1 sm:px-0",
           className,
         )}
       >
@@ -934,7 +934,7 @@ function parseInlineElements(text: string): React.ReactNode[] {
 // Recursive markdown parser for nested content
 function parseMarkdownContent(content: string): React.ReactNode {
   const tempMarkdown = <LLMMarkdown content={content} className="p-0 m-0" />;
-  return tempMarkdown;
+return tempMarkdown;
 }
 
 LLMMarkdown.displayName = "LLMMarkdown";

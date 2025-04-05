@@ -132,10 +132,10 @@ export function CodeBlock({
 
   return (
     <div className="relative my-4 overflow-hidden rounded-lg border border-gray-800 bg-muted/30 shadow-sm transition-all hover:shadow-md">
-      <div className="flex items-center justify-between border-b border-gray-800 bg-muted/50 px-4 py-1.5">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between border-b border-gray-800 bg-muted/50 px-2 sm:px-4 py-1.5">
+        <div className="flex items-center gap-1 sm:gap-2">
           <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-          <div className="text-xs font-medium text-muted-foreground">
+          <div className="text-xs font-medium text-muted-foreground truncate max-w-[100px] sm:max-w-full">
             {fileName || formatLanguageName(language)}
           </div>
         </div>
@@ -211,7 +211,7 @@ export function CodeBlock({
         >
           {({ className, style, tokens, getLineProps, getTokenProps }) => (
             <pre
-              className={cn("p-4 text-sm font-mono", className)}
+              className={cn("p-2 sm:p-4 text-xs sm:text-sm font-mono", className)}
               style={style}
             >
               {tokens.map((line, i) => (
@@ -220,10 +220,10 @@ export function CodeBlock({
                   {...getLineProps({ line, key: i })}
                   className="table-row"
                 >
-                  <span className="table-cell pr-4 text-right select-none opacity-50 text-xs w-10">
+                  <span className="table-cell pr-2 sm:pr-4 text-right select-none opacity-50 text-xs w-6 sm:w-10">
                     {i + 1}
                   </span>
-                  <span className="table-cell">
+                  <span className="table-cell whitespace-pre-wrap break-words">
                     {line.map((token, key) => (
                       <span key={key} {...getTokenProps({ token, key })} />
                     ))}
