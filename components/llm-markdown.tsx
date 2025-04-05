@@ -383,6 +383,7 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(
             key={`code-${elements.length}`}
             language={language}
             code={code}
+            className="my-4 sm:my-6"
           />,
         );
         currentCodeBlock = null;
