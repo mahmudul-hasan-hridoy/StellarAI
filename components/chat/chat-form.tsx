@@ -5,6 +5,7 @@ import { ArrowUp, Loader2, Wand2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { FileAttachment } from "@/components/file-attachment";
+import { StoredFilePreview } from "@/components/file-preview";
 import type { StoredFile } from "@/lib/types";
 
 interface ChatFormProps {
@@ -54,25 +55,16 @@ export function ChatForm({
     if (!inputValue.trim() && attachedFiles.length === 0) return;
 
     try {
-      // Prepare message content with file information for AI processing
+      // Get the user's message
       let processedMessage = inputValue;
-
-      // If there are attachments, include their information in the message
-      if (attachedFiles.length > 0) {
-        // Create file references that the AI can understand
-        const fileDescriptions = attachedFiles.map(file => 
-          `[Attached file: ${file.fileName}, Type: ${file.fileType || 'unknown'}, Size: ${formatFileSize(file.fileSize || 0)}]`
-        ).join("\n");
-
-        // Add file descriptions to the message
-        if (processedMessage.trim()) {
-          processedMessage += "\n\n" + fileDescriptions;
-        } else {
-          processedMessage = fileDescriptions;
-        }
+      
+      // When there are attachments but no text, add a default message
+      if (!processedMessage.trim() && attachedFiles.length > 0) {
+        processedMessage = "Please analyze the attached file(s).";
       }
 
       // Send message with file IDs for backend storage
+      // The actual file processing will happen in the API route
       const fileIds = attachedFiles.map((file) => file.id);
       await onSendMessage(processedMessage, fileIds);
 
@@ -114,29 +106,17 @@ export function ChatForm({
         whileHover={{ boxShadow: "0 0 0 1px rgba(255, 255, 255, 0.1)" }}
       >
         {attachedFiles.length > 0 && (
-          <div className="px-2 sm:px-4 pt-2 sm:pt-3 flex flex-wrap gap-1 sm:gap-2">
+          <div className="px-2 sm:px-4 pt-2 sm:pt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
             {attachedFiles.map((file) => (
-              <div
-                key={file.id}
-                className="flex items-center gap-1 text-xs bg-secondary/50 rounded-full pl-2 pr-1 py-0.5 sm:py-1"
-              >
-                <span
-                  className="truncate max-w-[80px] sm:max-w-[120px]"
-                  title={file.fileName}
-                >
-                  {file.fileName}
-                </span>
-                <button
-                  type="button"
-                  className="h-4 w-4 rounded-full text-muted-foreground hover:text-foreground"
-                  onClick={() =>
-                    setAttachedFiles((files) =>
-                      files.filter((f) => f.id !== file.id),
+              <div key={file.id} className="w-full">
+                <StoredFilePreview
+                  file={file}
+                  onRemove={(id) => 
+                    setAttachedFiles((files) => 
+                      files.filter((f) => f.id !== id)
                     )
                   }
-                >
-                  ×
-                </button>
+                />
               </div>
             ))}
           </div>

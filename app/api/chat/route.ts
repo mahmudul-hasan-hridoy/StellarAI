@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { addMessage } from "@/lib/chat-service";
+import { getFileById } from "@/lib/file-service";
 
 export async function POST(req: NextRequest) {
   try {
@@ -49,9 +50,70 @@ Your job is to make me a more effective developer by being my high-level strateg
       messageCount: messageArray.length,
     });
 
-    // If there are attachments, we could process them here
-    // For now, the file references are included in the message content
-    // This keeps the approach compatible with text-only LLMs
+    // Process attachments if present
+    let processedMessages = [...messageArray];
+
+    // If there are attachments, process them for AI model compatibility
+    if (attachments && attachments.length > 0) {
+      try {
+        const lastMessageIndex = processedMessages.length - 1;
+        
+        // Ensure the content object is properly structured for attachments
+        let content = 
+          typeof processedMessages[lastMessageIndex].content === 'string' 
+            ? [{ type: 'text', text: processedMessages[lastMessageIndex].content }] 
+            : processedMessages[lastMessageIndex].content;
+        
+        // If content is already an array, ensure it has the right format
+        if (!Array.isArray(content)) {
+          content = [{ type: 'text', text: String(content) }];
+        }
+        
+        // Process each attachment
+        for (const attachmentId of attachments) {
+          const file = await getFileById(attachmentId);
+          if (file && file.fileUrl) {
+            try {
+              // Fetch the file content and convert to base64
+              const response = await fetch(file.fileUrl);
+              const arrayBuffer = await response.arrayBuffer();
+              const base64 = Buffer.from(arrayBuffer).toString('base64');
+              
+              // Add image attachment in OpenAI-compatible format
+              if (file.fileType?.startsWith('image/')) {
+                content.push({
+                  type: 'image_url',
+                  image_url: {
+                    url: `data:${file.fileType};base64,${base64}`
+                  }
+                });
+              } else {
+                // For non-image files, include as text with base64 data
+                content.push({
+                  type: 'text',
+                  text: `[File: ${file.fileName} (${file.fileType})]
+                  Content (base64): ${base64.substring(0, 100)}...`
+                });
+              }
+            } catch (error) {
+              console.error(`Error processing attachment ${attachmentId}:`, error);
+              content.push({
+                type: 'text',
+                text: `[Error processing attachment: ${file.fileName}]`
+              });
+            }
+          }
+        }
+        
+        // Replace the last message content with the processed content
+        processedMessages[lastMessageIndex] = {
+          ...processedMessages[lastMessageIndex],
+          content
+        };
+      } catch (error) {
+        console.error('Error processing attachments:', error);
+      }
+    }
 
     // Initialize OpenAI client with Azure configuration
     const client = new OpenAI({
@@ -62,7 +124,7 @@ Your job is to make me a more effective developer by being my high-level strateg
     // Prepare messages for the API
     const apiMessages = [
       { role: "system", content: systemPrompt },
-      ...messageArray,
+      ...processedMessages,
     ];
 
     // Create a stream
