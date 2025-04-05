@@ -2,7 +2,6 @@ import { forwardRef } from "react";
 import { formatDistanceToNow } from "date-fns";
 import type { Message } from "@/lib/chat-service";
 import { Bot, User } from "lucide-react";
-import { CodeBlock } from "../code-block";
 import { LLMMarkdown } from "../llm-markdown";
 import { FileAttachmentDisplay } from "./file-attachment-display";
 
@@ -38,11 +37,15 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
       message.attachments && message.attachments.length > 0;
 
     return (
-      <div ref={ref} className="flex items-start gap-2 sm:gap-4 w-full">
+      <div ref={ref} className="flex items-start gap-2 sm:gap-4 w-full max-w-full">
         <div className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 select-none items-center justify-center rounded-md border text-xs sm:text-sm bg-muted text-muted-foreground">
-          {isUser ? <User className="h-3 w-3 sm:h-4 sm:w-4" /> : <Bot className="h-3 w-3 sm:h-4 sm:w-4" />}
+          {isUser ? (
+            <User className="h-3 w-3 sm:h-4 sm:w-4" />
+          ) : (
+            <Bot className="h-3 w-3 sm:h-4 sm:w-4" />
+          )}
         </div>
-        <div className="flex-1 space-y-2 sm:space-y-3 w-full sm:max-w-[85%] md:max-w-[90%]">
+        <div className="flex-1 space-y-2 sm:space-y-3 max-w-[97%] sm:max-w-[85%] md:max-w-[90%]">
           {hasAttachments && (
             <div className="mb-2">
               {message.attachments?.map((fileId) => (

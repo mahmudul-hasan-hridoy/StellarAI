@@ -2,7 +2,6 @@
 
 import React, { FC, memo, useState, useEffect, useRef, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { CodeBlock } from "./code-block";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +12,6 @@ import {
   Check,
   Copy,
   ExternalLink,
-  ArrowLeft,
   Circle,
   ChevronDown,
   ChevronUp,
@@ -191,7 +189,9 @@ const EnhancedCodeBlock: FC<EnhancedCodeBlockProps> = ({
                 <span className="ml-1">mermaid</span>
               </span>
             ) : (
-              <span className="truncate max-w-[100px] sm:max-w-full">{language}</span>
+              <span className="truncate max-w-[100px] sm:max-w-full">
+                {language}
+              </span>
             )}
           </div>
           <div className="flex gap-1">
@@ -340,7 +340,11 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(
     const lines = content.split("\n");
 
     let currentParagraph: string[] = [];
-    let currentCodeBlock: { language: string; code: string[]; filename?: string } | null = null;
+    let currentCodeBlock: {
+      language: string;
+      code: string[];
+      filename?: string;
+    } | null = null;
     let currentListItems: string[] = [];
     let currentListType: "ul" | "ol" | null = null;
     let inBlockQuote = false;
@@ -405,7 +409,10 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(
         } catch (error) {
           console.error("KaTeX rendering error:", error);
           elements.push(
-            <div key={`math-error-${elements.length}`} className="text-red-500 text-sm sm:text-base">
+            <div
+              key={`math-error-${elements.length}`}
+              className="text-red-500 text-sm sm:text-base"
+            >
               Error rendering math: {mathString}
             </div>,
           );
@@ -427,7 +434,10 @@ export const LLMMarkdown: FC<LLMMarkdownProps> = memo(
             )}
           >
             {currentListItems.map((item, i) => (
-              <li key={i} className="mb-1 sm:mb-1.5 text-foreground text-sm sm:text-base break-words">
+              <li
+                key={i}
+                className="mb-1 sm:mb-1.5 text-foreground text-sm sm:text-base break-words"
+              >
                 {parseInlineElements(item)}
               </li>
             ))}
@@ -933,8 +943,13 @@ function parseInlineElements(text: string): React.ReactNode[] {
 
 // Recursive markdown parser for nested content
 function parseMarkdownContent(content: string): React.ReactNode {
-  const tempMarkdown = <LLMMarkdown content={content} className="p-0 m-0" />;
-return tempMarkdown;
+  const tempMarkdown = (
+    <LLMMarkdown
+      content={content}
+      className="p-0 m-3 max-w-[80%] overflow-hidden break-all"
+    />
+  );
+  return tempMarkdown;
 }
 
 LLMMarkdown.displayName = "LLMMarkdown";

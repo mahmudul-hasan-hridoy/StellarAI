@@ -29,8 +29,6 @@ export default function ChatPage({ params }: { params: { id: string } }) {
   const [sending, setSending] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [streamingMessage, setStreamingMessage] = useState<string>("");
-  //Removed selectedModel state.
-  //const [selectedModel, setSelectedModel] = useState("DeepSeek V3");
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -238,9 +236,9 @@ export default function ChatPage({ params }: { params: { id: string } }) {
   };
 
   return (
-    <div className="flex flex-col w-full h-[calc(100dvh-60px)] md:h-[100dvh] overflow-hidden">
+    <div className="flex flex-col w-full md:h-[100dvh] h-[calc(100dvh-60px)] overflow-hidden">
       {/* Chat messages area - Scrollable container */}
-      <div className="flex-1 overflow-y-auto p-2 pb-4 sm:p-4 sm:pb-6 space-y-4 sm:space-y-6">
+      <div className="flex-1 w-full max-w-full overflow-y-auto p-2 pb-4 sm:p-4 sm:pb-6 space-y-4 sm:space-y-6">
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -266,8 +264,8 @@ export default function ChatPage({ params }: { params: { id: string } }) {
                 <div className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-md border text-sm bg-muted text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
                 </div>
-                <div className="flex-1 space-y-2 w-full sm:max-w-[85%] md:max-w-[90%]">
-                  <div className="prose prose-invert max-w-full p-2 sm:p-3 rounded-lg bg-muted">
+                <div className="flex-1 max-w-full w-full space-y-2 w-full sm:max-w-[85%] md:max-w-[90%]">
+                  <div className="prose prose-invert max-w-full w-full p-2 sm:p-3 rounded-lg bg-muted">
                     {streamingMessage}
                   </div>
                 </div>
